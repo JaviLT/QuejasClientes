@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ZX · Procesos — CEDIS</title>
+<link rel="stylesheet" href="assets/css/estilos.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+  <header id="zx-encabezado"></header>
+
+  <main class="zx-contenedor">
+    <div id="zx-mensaje" class="zx-mensaje zx-oculto"></div>
+
+    <div class="zx-tarjeta">
+      <h2>
+        Espera de recolección <span id="c-espera" class="zx-contador">0</span>
+      </h2>
+      <div id="lista-espera"></div>
+    </div>
+
+    <div class="zx-tarjeta">
+      <h2>Recolección sin queja asociada</h2>
+      <p class="zx-fila-meta" style="margin-top:-6px;">Genera un folio de recolección cuando llega material sin que haya una queja registrada.</p>
+      <button id="btn-sin-queja" class="zx-btn zx-btn-secundario" style="margin-top:10px;">Generar folio sin queja</button>
+    </div>
+
+    <div class="zx-tarjeta">
+      <h2>Folios pendientes de enviar <span id="c-pendientes" class="zx-contador">0</span></h2>
+      <div id="lista-pendientes"></div>
+    </div>
+
+    <div class="zx-tarjeta">
+      <h2>Nota de crédito creada <span id="c-nc" class="zx-contador">0</span></h2>
+      <div id="lista-nc"></div>
+    </div>
+  </main>
+
+  <footer class="zx-pie">ZX · Procesos — Zubex</footer>
+
+  <script type="module" src="assets/js/cedis.js"></script>
+</body>
+</html>

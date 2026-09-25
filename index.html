@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ZX · Procesos — Iniciar sesión</title>
+<link rel="stylesheet" href="assets/css/estilos.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+  <div class="zx-login-envoltura">
+    <div class="zx-login-tarjeta">
+      <span class="zx-login-logo">ZX</span>
+      <h1>Procesos · Quejas de Cliente</h1>
+      <p class="sub">Inicia sesión con tu cuenta de área.</p>
+
+      <div id="zx-mensaje" class="zx-mensaje zx-mensaje-error zx-oculto"></div>
+
+      <form id="zx-form-login">
+        <div class="zx-campo">
+          <label for="correo">Correo</label>
+          <input type="email" id="correo" name="correo" autocomplete="username" required />
+        </div>
+        <div class="zx-campo" style="margin-top:12px;">
+          <label for="contrasena">Contraseña</label>
+          <input type="password" id="contrasena" name="contrasena" autocomplete="current-password" required />
+        </div>
+        <button type="submit" id="zx-btn-entrar" class="zx-btn zx-btn-primario">Entrar</button>
+      </form>
+
+      <div id="zx-selector-admin" class="zx-selector-pantalla zx-oculto">
+        <p class="sub" style="margin:14px 0 0;">Tu cuenta es de administrador. Elige una pantalla:</p>
+        <a class="zx-btn zx-btn-secundario" href="comercial.html">Comercial</a>
+        <a class="zx-btn zx-btn-secundario" href="calidad.html">Calidad</a>
+        <a class="zx-btn zx-btn-secundario" href="cedis.html">CEDIS</a>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="assets/js/login.js"></script>
+</body>
+</html>

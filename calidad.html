@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ZX · Procesos — Calidad</title>
+<link rel="stylesheet" href="assets/css/estilos.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+  <header id="zx-encabezado"></header>
+
+  <main class="zx-contenedor">
+    <div id="zx-mensaje" class="zx-mensaje zx-oculto"></div>
+
+    <div class="zx-tarjeta">
+      <h2>Quejas nuevas <span id="c-nuevas" class="zx-contador">0</span></h2>
+      <div id="lista-nuevas"></div>
+    </div>
+
+    <div class="zx-tarjeta">
+      <h2>Esperando muestra <span id="c-muestra" class="zx-contador">0</span></h2>
+      <div id="lista-muestra"></div>
+    </div>
+
+    <div class="zx-tarjeta">
+      <h2>Dictamen en proceso <span id="c-dictamen" class="zx-contador">0</span></h2>
+      <div id="lista-dictamen"></div>
+    </div>
+
+    <div class="zx-tarjeta">
+      <h2>Material en planta (recibido de CEDIS) <span id="c-planta" class="zx-contador">0</span></h2>
+      <div id="lista-planta"></div>
+    </div>
+
+    <div class="zx-tarjeta">
+      <h2>Revisión en proceso <span id="c-revision" class="zx-contador">0</span></h2>
+      <div id="lista-revision"></div>
+    </div>
+  </main>
+
+  <footer class="zx-pie">ZX · Procesos — Zubex</footer>
+
+  <script type="module" src="assets/js/calidad.js"></script>
+</body>
+</html>

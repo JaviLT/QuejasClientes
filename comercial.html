@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ZX · Procesos — Comercial</title>
+<link rel="stylesheet" href="assets/css/estilos.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+  <header id="zx-encabezado"></header>
+
+  <main class="zx-contenedor">
+    <div class="zx-tarjeta">
+      <h2>Levantar nueva queja</h2>
+
+      <div id="zx-mensaje" class="zx-mensaje zx-oculto"></div>
+
+      <form id="zx-form-queja">
+        <div class="zx-form-grid">
+          <div class="zx-campo">
+            <label for="cliente">Cliente <span class="req">*</span></label>
+            <input type="text" id="cliente" required />
+          </div>
+          <div class="zx-campo">
+            <label for="tipo_queja">Tipo de queja <span class="req">*</span></label>
+            <select id="tipo_queja" required>
+              <option value="">Selecciona…</option>
+            </select>
+          </div>
+          <div class="zx-campo">
+            <label for="producto">Producto</label>
+            <input type="text" id="producto" />
+          </div>
+          <div class="zx-campo">
+            <label for="prioridad">Prioridad</label>
+            <select id="prioridad">
+              <option value="">Sin definir</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+          </div>
+          <div class="zx-campo">
+            <label for="codigo">Código</label>
+            <input type="text" id="codigo" />
+          </div>
+          <div class="zx-campo">
+            <label for="pedido">Pedido</label>
+            <input type="text" id="pedido" />
+          </div>
+          <div class="zx-campo">
+            <label for="lote">Lote</label>
+            <input type="text" id="lote" />
+          </div>
+          <div class="zx-campo">
+            <label for="factura">Factura</label>
+            <input type="text" id="factura" />
+          </div>
+        </div>
+
+        <h2 style="margin-top:22px;">D2 — Descripción del problema</h2>
+        <div class="zx-form-grid">
+          <div class="zx-campo">
+            <label for="d2_quien">Quién</label>
+            <input type="text" id="d2_quien" />
+          </div>
+          <div class="zx-campo">
+            <label for="d2_que">Qué <span class="req">*</span></label>
+            <input type="text" id="d2_que" required />
+          </div>
+          <div class="zx-campo">
+            <label for="d2_porque">Porqué</label>
+            <input type="text" id="d2_porque" />
+          </div>
+          <div class="zx-campo">
+            <label for="d2_cuando">Cuándo</label>
+            <input type="date" id="d2_cuando" />
+          </div>
+          <div class="zx-campo">
+            <label for="d2_donde">Dónde</label>
+            <input type="text" id="d2_donde" />
+          </div>
+          <div class="zx-campo zx-ancho-completo">
+            <label for="d2_cuanto">Cuánto</label>
+            <textarea id="d2_cuanto"></textarea>
+          </div>
+        </div>
+
+        <button type="submit" id="zx-btn-guardar" class="zx-btn zx-btn-primario" style="margin-top:18px;">Registrar queja</button>
+      </form>
+    </div>
+
+    <div class="zx-tarjeta">
+      <h2>Mis quejas recientes <span id="zx-contador-quejas" class="zx-contador">0</span></h2>
+      <div id="zx-lista-quejas"></div>
+    </div>
+  </main>
+
+  <footer class="zx-pie">ZX · Procesos — Zubex</footer>
+
+  <script type="module" src="assets/js/comercial.js"></script>
+</body>
+</html>

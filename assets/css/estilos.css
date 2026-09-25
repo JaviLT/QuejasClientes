@@ -1,0 +1,234 @@
+/* ZX · Procesos — estilos compartidos (paleta de marca Zubex) */
+
+:root {
+  --zx-primario: #0D18A8;
+  --zx-secundario: #227EF6;
+  --zx-exito: #166534;
+  --zx-peligro: #991b1b;
+  --zx-fondo: #f8fafc;
+  --zx-fondo-azul: #dbeafe;
+  --zx-texto: #0f172a;
+  --zx-texto-suave: #475569;
+  --zx-borde: #e2e8f0;
+  --zx-blanco: #ffffff;
+  --zx-radio: 10px;
+  font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--zx-fondo);
+  color: var(--zx-texto);
+  font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
+  min-height: 100vh;
+}
+
+a { color: var(--zx-secundario); }
+
+/* ---------- Encabezado ---------- */
+#zx-encabezado {
+  background: var(--zx-primario);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(13, 24, 168, 0.18);
+}
+.zx-header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.zx-header-marca { display: flex; align-items: center; gap: 12px; }
+.zx-header-logo {
+  background: #fff;
+  color: var(--zx-primario);
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 8px;
+  letter-spacing: 0.5px;
+}
+.zx-header-titulo { font-size: 1.05rem; font-weight: 600; }
+.zx-header-usuario { display: flex; align-items: center; gap: 14px; font-size: 0.9rem; opacity: 0.95; }
+
+/* ---------- Contenedor general ---------- */
+.zx-contenedor {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 60px;
+}
+
+.zx-tarjeta {
+  background: var(--zx-blanco);
+  border: 1px solid var(--zx-borde);
+  border-radius: var(--zx-radio);
+  padding: 20px 22px;
+  margin-bottom: 22px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.zx-tarjeta h2 {
+  margin-top: 0;
+  font-size: 1.05rem;
+  color: var(--zx-primario);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.zx-contador {
+  background: var(--zx-fondo-azul);
+  color: var(--zx-primario);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+
+/* ---------- Formularios ---------- */
+.zx-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+.zx-campo { display: flex; flex-direction: column; gap: 6px; }
+.zx-campo label { font-size: 0.85rem; font-weight: 600; color: var(--zx-texto-suave); }
+.zx-campo label .req { color: var(--zx-peligro); }
+.zx-campo input, .zx-campo select, .zx-campo textarea {
+  border: 1px solid var(--zx-borde);
+  border-radius: 8px;
+  padding: 9px 11px;
+  font-size: 0.92rem;
+  font-family: inherit;
+  background: #fff;
+  color: var(--zx-texto);
+}
+.zx-campo textarea { resize: vertical; min-height: 70px; }
+.zx-campo input:focus, .zx-campo select:focus, .zx-campo textarea:focus {
+  outline: none;
+  border-color: var(--zx-secundario);
+  box-shadow: 0 0 0 3px rgba(34, 126, 246, 0.15);
+}
+.zx-ancho-completo { grid-column: 1 / -1; }
+
+/* ---------- Botones ---------- */
+.zx-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+.zx-btn:hover { filter: brightness(0.93); }
+.zx-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.zx-btn-primario { background: var(--zx-primario); color: #fff; }
+.zx-btn-secundario { background: var(--zx-secundario); color: #fff; }
+.zx-btn-exito { background: var(--zx-exito); color: #fff; }
+.zx-btn-peligro { background: var(--zx-peligro); color: #fff; }
+.zx-btn-ghost { background: rgba(255,255,255,0.12); color: #fff; }
+.zx-btn-sm { padding: 6px 12px; font-size: 0.82rem; }
+
+/* ---------- Listas / bandejas ---------- */
+.zx-fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--zx-borde);
+}
+.zx-fila:last-child { border-bottom: none; }
+.zx-fila-info { display: flex; flex-direction: column; gap: 3px; }
+.zx-fila-folio { font-weight: 700; color: var(--zx-primario); }
+.zx-fila-meta { font-size: 0.82rem; color: var(--zx-texto-suave); }
+.zx-fila-acciones { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+.zx-cronometro {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  background: var(--zx-fondo-azul);
+  color: var(--zx-primario);
+  padding: 2px 9px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+}
+
+.zx-vacio { color: var(--zx-texto-suave); font-size: 0.9rem; padding: 10px 0; }
+
+.zx-textarea-inline {
+  width: 100%;
+  margin: 10px 0;
+  border: 1px solid var(--zx-borde);
+  border-radius: 8px;
+  padding: 9px 11px;
+  font-family: inherit;
+  min-height: 60px;
+}
+
+.zx-mensaje {
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  margin-bottom: 16px;
+}
+.zx-mensaje-ok { background: #dcfce7; color: var(--zx-exito); }
+.zx-mensaje-error { background: #fee2e2; color: var(--zx-peligro); }
+.zx-oculto { display: none !important; }
+
+/* ---------- Login ---------- */
+.zx-login-envoltura {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.zx-login-tarjeta {
+  background: #fff;
+  border-radius: 14px;
+  padding: 36px 34px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 10px 30px rgba(13, 24, 168, 0.12);
+  border: 1px solid var(--zx-borde);
+}
+.zx-login-logo {
+  display: inline-block;
+  background: var(--zx-primario);
+  color: #fff;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+}
+.zx-login-tarjeta h1 { font-size: 1.2rem; margin: 0 0 4px; color: var(--zx-texto); }
+.zx-login-tarjeta p.sub { margin: 0 0 22px; color: var(--zx-texto-suave); font-size: 0.88rem; }
+.zx-login-tarjeta .zx-btn { width: 100%; margin-top: 6px; }
+
+.zx-selector-pantalla { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+
+.zx-bloqueo {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+  padding: 20px;
+}
+
+footer.zx-pie {
+  text-align: center;
+  color: var(--zx-texto-suave);
+  font-size: 0.78rem;
+  padding: 20px;
+}
