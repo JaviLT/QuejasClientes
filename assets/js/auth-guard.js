@@ -55,7 +55,6 @@ function mostrarBloqueo(mensaje) {
 
 const PANTALLAS_ADMIN = [
   { href: 'tiempos.html', etiqueta: 'Tiempos' },
-  { href: 'eliminar.html', etiqueta: 'Eliminar quejas' },
   { href: 'usuarios.html', etiqueta: 'Usuarios' },
 ];
 

@@ -1,13 +1,11 @@
 import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml } from './auth-guard.js';
-import { iniciarCronometros } from './tiempo.js';
 import { botonDetalle, activarBotonesDetalle } from './detalle.js';
 
 const sesion = await exigirSesion(['calidad']);
 if (sesion) {
   pintarEncabezado(sesion.perfil, 'Calidad');
   await cargarTodo();
-  iniciarCronometros();
   escucharCambiosEnVivo();
 }
 
@@ -48,8 +46,7 @@ function encabezadoFila(q) {
     <div class="zx-fila-info">
       <span class="zx-fila-folio">${escaparHtml(q.folio)} · ${escaparHtml(q.cliente)}</span>
       <span class="zx-fila-meta">${escaparHtml(q.tipo_queja || 'Sin tipo')}${q.prioridad ? ' · Prioridad ' + q.prioridad : ''}</span>
-    </div>
-    <span class="zx-cronometro" data-desde="${q.tempo_activo_desde || ''}">--:--</span>`;
+    </div>`;
 }
 
 async function renderizarSimple(contenedorId, contadorId, estado, botones) {
@@ -300,7 +297,6 @@ async function cargarTodo() {
     <button class="zx-btn zx-btn-secundario zx-btn-sm" data-accion="material_recibido">Material recibido</button>
   `);
   await renderizarConTexto('lista-revision', 'c-revision', 'revision_pendiente', 'queja_revision', 'Texto de la revisión');
-  iniciarCronometros();
 }
 
 function escucharCambiosEnVivo() {

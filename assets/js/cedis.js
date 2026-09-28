@@ -1,13 +1,11 @@
 import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml } from './auth-guard.js';
-import { iniciarCronometros } from './tiempo.js';
 import { botonDetalle, activarBotonesDetalle } from './detalle.js';
 
 const sesion = await exigirSesion(['cedis']);
 if (sesion) {
   pintarEncabezado(sesion.perfil, 'CEDIS');
   await cargarTodo();
-  iniciarCronometros();
   escucharCambiosEnVivo();
 }
 
@@ -23,7 +21,6 @@ async function cargarTodo() {
   await cargarEspera();
   await cargarPendientesDeEnvio();
   await cargarNc();
-  iniciarCronometros();
 }
 
 // ---------- Espera de recolección ----------
@@ -52,7 +49,6 @@ async function cargarEspera() {
         <span class="zx-fila-folio">${escaparHtml(q.folio)} · ${escaparHtml(q.cliente)}</span>
         <span class="zx-fila-meta">${escaparHtml(q.tipo_queja || 'Sin tipo')}</span>
       </div>
-      <span class="zx-cronometro" data-desde="${q.tempo_activo_desde || ''}">--:--</span>
       <div class="zx-fila-acciones">
         ${botonDetalle(q.id)}
         <button class="zx-btn zx-btn-secundario zx-btn-sm" data-id="${q.id}" data-accion="material-recibido">Material recibido (generar folio)</button>
@@ -166,7 +162,6 @@ async function cargarNc() {
         <span class="zx-fila-folio">${escaparHtml(q.folio)} · ${escaparHtml(q.cliente)}</span>
         <span class="zx-fila-meta">${escaparHtml(q.tipo_queja || 'Sin tipo')}</span>
       </div>
-      <span class="zx-cronometro" data-desde="${q.tempo_activo_desde || ''}">--:--</span>
       <div class="zx-fila-acciones">
         ${botonDetalle(q.id)}
         <button class="zx-btn zx-btn-exito zx-btn-sm" data-accion="aceptar">Aceptar NC</button>

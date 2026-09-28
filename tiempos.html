@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <script>(function(){try{if(localStorage.getItem('zx-tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}})();</script>
-<title>ZX · Procesos — Tiempos</title>
+<title>Quejas de Clientes — Tiempos</title>
 <link rel="stylesheet" href="assets/css/estilos.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
@@ -15,9 +15,9 @@
     <div id="zx-mensaje" class="zx-mensaje zx-oculto"></div>
 
     <div class="zx-tarjeta">
-      <h2>Quejas abiertas ahora <span id="c-abiertas" class="zx-contador">0</span></h2>
-      <p class="zx-fila-meta" style="margin-top:-6px;">Cada cronómetro muestra cuánto lleva la queja en su etapa actual.</p>
-      <div id="lista-abiertas"></div>
+      <h2>Todas las quejas <span id="c-quejas" class="zx-contador">0</span></h2>
+      <p class="zx-fila-meta" style="margin-top:-6px;">Sin importar su estatus. Da clic en "Ver tiempos" para ver cuánto duró cada etapa.</p>
+      <div id="lista-quejas"></div>
     </div>
 
     <div class="zx-tarjeta">
@@ -27,7 +27,7 @@
     </div>
   </main>
 
-  <footer class="zx-pie">ZX · Procesos — Zubex</footer>
+  <footer class="zx-pie">Quejas de Clientes — Zubex</footer>
 
   <script type="module" src="assets/js/tiempos.js"></script>
 </body>

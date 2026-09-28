@@ -202,6 +202,37 @@ a { color: var(--zx-secundario); }
 
 .zx-vacio { color: var(--zx-texto-suave); font-size: 0.9rem; padding: 10px 0; }
 
+/* ---------- Fila expandible (Tiempos de admin) ---------- */
+.zx-fila-expandible { border-bottom: 1px solid var(--zx-borde); }
+.zx-fila-expandible:last-child { border-bottom: none; }
+.zx-fila-expandible .zx-fila { border-bottom: none; }
+.zx-btn-expandir {
+  background: var(--zx-fondo-azul);
+  color: var(--zx-primario);
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+.zx-btn-expandir:hover { filter: brightness(0.95); }
+.zx-panel-tiempos {
+  padding: 4px 0 16px;
+}
+.zx-panel-tiempos .zx-linea-tiempo { margin-top: 6px; }
+.zx-etapa-actual {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--zx-borde);
+}
+.zx-etapa-actual strong { color: var(--zx-primario); }
+
 .zx-textarea-inline {
   width: 100%;
   margin: 10px 0;
