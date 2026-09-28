@@ -53,16 +53,28 @@ function mostrarBloqueo(mensaje) {
   document.getElementById('zx-btn-salir-bloqueo').addEventListener('click', cerrarSesion);
 }
 
+const PANTALLAS_ADMIN = [
+  { href: 'tiempos.html', etiqueta: 'Tiempos' },
+  { href: 'eliminar.html', etiqueta: 'Eliminar quejas' },
+  { href: 'usuarios.html', etiqueta: 'Usuarios' },
+];
+
 /** Pinta el encabezado compartido (logo, título de pantalla, usuario, modo noche, botón salir). */
 export function pintarEncabezado(perfil, tituloPantalla) {
   const el = document.getElementById('zx-encabezado');
   if (!el) return;
+  const paginaActual = location.pathname.split('/').pop();
+  const navAdmin = perfil.rol === 'admin' ? `
+    <nav class="zx-header-nav-admin">
+      ${PANTALLAS_ADMIN.map((p) => `<a class="${p.href === paginaActual ? 'zx-nav-activo' : ''}" href="${p.href}">${p.etiqueta}</a>`).join('')}
+    </nav>` : '';
   el.innerHTML = `
     <div class="zx-header-inner">
       <div class="zx-header-marca">
         <span class="zx-header-logo">ZX</span>
         <span class="zx-header-titulo">${tituloPantalla}</span>
       </div>
+      ${navAdmin}
       <div class="zx-header-usuario">
         <span>${escaparHtml(perfil.nombre_completo)} · <strong>${escaparHtml(perfil.rol)}</strong></span>
         <button id="zx-btn-tema" class="zx-btn-tema" type="button" title="Cambiar a modo noche/día"></button>

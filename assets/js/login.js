@@ -1,6 +1,6 @@
 import { supabase } from './supabase-client.js';
 
-const DESTINOS = { comercial: 'comercial.html', calidad: 'calidad.html', cedis: 'cedis.html' };
+const DESTINOS = { comercial: 'comercial.html', calidad: 'calidad.html', cedis: 'cedis.html', admin: 'tiempos.html' };
 
 // El usuario solo escribe una palabra (COMERCIAL, CALIDAD, CEDIS, ADMIN); por
 // dentro Supabase Auth siempre necesita un correo, así que se construye aquí
@@ -15,7 +15,6 @@ function construirCorreoInterno(usuario) {
 const form = document.getElementById('zx-form-login');
 const mensaje = document.getElementById('zx-mensaje');
 const btnEntrar = document.getElementById('zx-btn-entrar');
-const selectorAdmin = document.getElementById('zx-selector-admin');
 
 function mostrarError(texto) {
   mensaje.textContent = texto;
@@ -35,12 +34,6 @@ async function redirigirSegunRol() {
   if (error || !perfil || perfil.activo === false) {
     await supabase.auth.signOut();
     mostrarError('Tu cuenta no está activa. Contacta a un administrador.');
-    return;
-  }
-
-  if (perfil.rol === 'admin') {
-    form.classList.add('zx-oculto');
-    selectorAdmin.classList.remove('zx-oculto');
     return;
   }
 

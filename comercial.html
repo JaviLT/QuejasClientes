@@ -12,10 +12,25 @@
   <header id="zx-encabezado"></header>
 
   <main class="zx-contenedor">
-    <div class="zx-tarjeta">
-      <h2>Levantar nueva queja</h2>
+    <div id="zx-mensaje" class="zx-mensaje zx-oculto"></div>
 
-      <div id="zx-mensaje" class="zx-mensaje zx-oculto"></div>
+    <div class="zx-tarjeta">
+      <h2>
+        <span>Mis quejas recientes <span id="zx-contador-quejas" class="zx-contador">0</span></span>
+        <button type="button" id="zx-btn-abrir-nueva" class="zx-btn zx-btn-primario zx-btn-sm">+ Nueva queja</button>
+      </h2>
+      <div id="zx-lista-quejas"></div>
+    </div>
+  </main>
+
+  <div id="zx-modal-nueva-fondo" class="zx-modal-fondo zx-oculto">
+    <div class="zx-modal">
+      <div class="zx-modal-cabecera">
+        <h2>Levantar nueva queja</h2>
+        <button type="button" class="zx-modal-cerrar" id="zx-btn-cerrar-nueva">✕</button>
+      </div>
+
+      <div id="zx-modal-mensaje" class="zx-mensaje zx-mensaje-error zx-oculto"></div>
 
       <form id="zx-form-queja">
         <div class="zx-form-grid">
@@ -93,12 +108,7 @@
         <button type="submit" id="zx-btn-guardar" class="zx-btn zx-btn-primario" style="margin-top:18px;">Registrar queja</button>
       </form>
     </div>
-
-    <div class="zx-tarjeta">
-      <h2>Mis quejas recientes <span id="zx-contador-quejas" class="zx-contador">0</span></h2>
-      <div id="zx-lista-quejas"></div>
-    </div>
-  </main>
+  </div>
 
   <footer class="zx-pie">ZX · Procesos — Zubex</footer>
 

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script>(function(){try{if(localStorage.getItem('zx-tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}})();</script>
+<title>ZX · Procesos — Usuarios</title>
+<link rel="stylesheet" href="assets/css/estilos.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+  <header id="zx-encabezado"></header>
+
+  <main class="zx-contenedor">
+    <div id="zx-mensaje" class="zx-mensaje zx-oculto"></div>
+
+    <div class="zx-tarjeta">
+      <h2>Crear usuario nuevo</h2>
+      <form id="zx-form-usuario">
+        <div class="zx-form-grid">
+          <div class="zx-campo">
+            <label for="nuevo-usuario">Usuario <span class="req">*</span></label>
+            <input type="text" id="nuevo-usuario" placeholder="ej. JPEREZ" autocapitalize="characters" required />
+          </div>
+          <div class="zx-campo">
+            <label for="nuevo-nombre">Nombre completo</label>
+            <input type="text" id="nuevo-nombre" placeholder="ej. Juan Pérez" />
+          </div>
+          <div class="zx-campo">
+            <label for="nuevo-rol">Rol <span class="req">*</span></label>
+            <select id="nuevo-rol" required>
+              <option value="comercial">Comercial</option>
+              <option value="calidad">Calidad</option>
+              <option value="cedis">CEDIS</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div class="zx-campo">
+            <label for="nueva-contrasena">Contraseña <span class="req">*</span></label>
+            <input type="text" id="nueva-contrasena" minlength="8" required />
+          </div>
+        </div>
+        <button type="submit" id="zx-btn-crear-usuario" class="zx-btn zx-btn-primario" style="margin-top:18px;">Crear usuario</button>
+      </form>
+    </div>
+
+    <div class="zx-tarjeta">
+      <h2>Usuarios existentes <span id="c-usuarios" class="zx-contador">0</span></h2>
+      <div id="lista-usuarios"></div>
+    </div>
+  </main>
+
+  <footer class="zx-pie">ZX · Procesos — Zubex</footer>
+
+  <script type="module" src="assets/js/usuarios.js"></script>
+</body>
+</html>

@@ -3,7 +3,7 @@ import { exigirSesion, pintarEncabezado, escaparHtml } from './auth-guard.js';
 import { iniciarCronometros } from './tiempo.js';
 import { botonDetalle, activarBotonesDetalle } from './detalle.js';
 
-const sesion = await exigirSesion(['cedis', 'admin']);
+const sesion = await exigirSesion(['cedis']);
 if (sesion) {
   pintarEncabezado(sesion.perfil, 'CEDIS');
   await cargarTodo();

@@ -3,7 +3,7 @@ import { exigirSesion, pintarEncabezado, escaparHtml } from './auth-guard.js';
 import { iniciarCronometros } from './tiempo.js';
 import { botonDetalle, activarBotonesDetalle } from './detalle.js';
 
-const sesion = await exigirSesion(['calidad', 'admin']);
+const sesion = await exigirSesion(['calidad']);
 if (sesion) {
   pintarEncabezado(sesion.perfil, 'Calidad');
   await cargarTodo();
@@ -292,10 +292,6 @@ async function renderizarDictamen(contenedorId, contadorId, estado) {
 }
 
 async function cargarTodo() {
-  await renderizarSimple('lista-nuevas', 'c-nuevas', 'nueva', `
-    <button class="zx-btn zx-btn-exito zx-btn-sm" data-accion="aceptar">Aceptar</button>
-    <button class="zx-btn zx-btn-peligro zx-btn-sm" data-accion="rechazar">Rechazar</button>
-  `);
   await renderizarSimple('lista-muestra', 'c-muestra', 'esperando_muestra', `
     <button class="zx-btn zx-btn-secundario zx-btn-sm" data-accion="muestra_recibida">Muestra recibida</button>
   `);

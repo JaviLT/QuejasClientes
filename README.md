@@ -6,18 +6,21 @@ Front real (HTML/CSS/JS estático) conectado a Supabase, para registrar y dar se
 
 ```
 index.html              Login (usuario + contraseña — sin formato de correo, ver abajo)
-comercial.html           Levantar una queja nueva
-calidad.html             Bandejas de Calidad (aceptar/rechazar, dictamen, revisión…)
-cedis.html               Bandejas de CEDIS (recolección, envío a planta, notas de crédito)
+comercial.html           Mis quejas + botón "Nueva queja" (modal)
+calidad.html             Bandejas de Calidad (esperando muestra, dictamen, revisión…)
+cedis.html               Bandejas de CEDIS (recolección sin queja arriba, espera, envío a planta, notas de crédito)
 tiempos.html             Solo Admin: monitor en vivo de quejas abiertas + reporte de tiempos por etapa
+eliminar.html            Solo Admin: eliminar una queja por completo
+usuarios.html            Solo Admin: crear usuarios nuevos + lista de usuarios existentes
 assets/css/estilos.css   Estilos compartidos (paleta de marca Zubex)
 assets/js/
   supabase-client.js     Inicializa el cliente de Supabase (URL + publishable key)
-  auth-guard.js          Exige sesión + rol correcto en cada pantalla, pinta el encabezado (incluye modo noche)
+  auth-guard.js          Exige sesión + rol correcto en cada pantalla, pinta el encabezado (modo noche + menú de admin)
   tiempo.js               Cronómetro en vivo del "tempo" activo de cada queja
   detalle.js              Modal compartido "Ver detalles" de una queja (datos + línea de tiempo + dictamen)
-  login.js, comercial.js, calidad.js, cedis.js, tiempos.js   Lógica de cada pantalla
+  login.js, comercial.js, calidad.js, cedis.js, tiempos.js, eliminar.js, usuarios.js   Lógica de cada pantalla
 supabase/migrations/     Esquema completo de la base de datos (SQL)
+supabase/functions/admin-crear-usuario/   Edge Function para crear usuarios (usa la service_role key del lado del servidor)
 ```
 
 Es un sitio 100% estático: no necesita build ni servidor propio. Se puede publicar tal cual en GitHub Pages, Netlify, Vercel o cualquier hosting de archivos estáticos.
@@ -55,9 +58,15 @@ El dictamen ya no es un texto libre: Calidad llena un formulario con los campos 
 
 Cada pantalla tiene un botón para alternar modo claro/oscuro (se guarda en `localStorage` del navegador) y un botón "Ver detalles" en cada queja que abre un modal de solo lectura con todos sus datos, el dictamen si existe y la línea de tiempo de sus etapas.
 
-## Pantalla de Tiempos (Admin)
+## Pantallas de Admin (Tiempos / Eliminar quejas / Usuarios)
 
-Solo la cuenta `admin` puede entrar a `tiempos.html`. Muestra dos cosas: un monitor en vivo de todas las quejas que aún no llegaron a un estado terminal (con el cronómetro de su etapa actual), y un reporte con el promedio/mínimo/máximo de cuánto tarda cada etapa, calculado sobre el historial ya cerrado en la tabla `tempos` a través de la vista `vw_tiempos_por_etapa` (`supabase/migrations/20260928155220_vista_reporte_tiempos_por_etapa.sql`).
+La cuenta `admin` entra directo a `tiempos.html` (ya no elige entre 4 pantallas, y ya no tiene acceso a Comercial/Calidad/CEDIS). Desde el encabezado se mueve entre sus tres pantallas:
+
+- **Tiempos** — un monitor en vivo de todas las quejas que aún no llegaron a un estado terminal (con el cronómetro de su etapa actual), y un reporte con el promedio/mínimo/máximo de cuánto tarda cada etapa, calculado sobre el historial ya cerrado en la tabla `tempos` a través de la vista `vw_tiempos_por_etapa` (`supabase/migrations/20260928155220_vista_reporte_tiempos_por_etapa.sql`).
+- **Eliminar quejas** (`eliminar.html`) — lista todas las quejas y permite borrarlas por completo (RPC `queja_eliminar`, `supabase/migrations/20260928182656_saltar_nueva_y_admin_eliminar_usuario.sql`).
+- **Usuarios** (`usuarios.html`) — crea cuentas nuevas llamando a la Edge Function `admin-crear-usuario` (`supabase/functions/admin-crear-usuario/`), que valida que quien llama sea admin y usa la `service_role key` del lado del servidor.
+
+Desde el 28 de septiembre de 2026 una queja nueva ya no pasa por el estatus `nueva`: arranca directo en `esperando_muestra` (por eso Calidad ya no tiene bandeja de "Quejas nuevas").
 
 ## Pendientes conocidos
 

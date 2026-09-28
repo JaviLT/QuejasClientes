@@ -2,7 +2,7 @@ import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml } from './auth-guard.js';
 import { botonDetalle, activarBotonesDetalle } from './detalle.js';
 
-const sesion = await exigirSesion(['comercial', 'admin']);
+const sesion = await exigirSesion(['comercial']);
 if (sesion) {
   pintarEncabezado(sesion.perfil, 'Comercial');
   await cargarCatalogoTiposQueja();
@@ -35,10 +35,25 @@ function valorOTexto(id) {
   return v === '' ? null : v;
 }
 
+const modalFondo = document.getElementById('zx-modal-nueva-fondo');
+const modalMensaje = document.getElementById('zx-modal-mensaje');
+
+function abrirModalNueva() {
+  modalMensaje.classList.add('zx-oculto');
+  modalFondo.classList.remove('zx-oculto');
+}
+
+function cerrarModalNueva() {
+  modalFondo.classList.add('zx-oculto');
+}
+
+document.getElementById('zx-btn-abrir-nueva').addEventListener('click', abrirModalNueva);
+document.getElementById('zx-btn-cerrar-nueva').addEventListener('click', cerrarModalNueva);
+modalFondo.addEventListener('click', (evento) => { if (evento.target === modalFondo) cerrarModalNueva(); });
+
 document.getElementById('zx-form-queja').addEventListener('submit', async (evento) => {
   evento.preventDefault();
-  const mensaje = document.getElementById('zx-mensaje');
-  mensaje.classList.add('zx-oculto');
+  modalMensaje.classList.add('zx-oculto');
 
   const btn = document.getElementById('zx-btn-guardar');
   btn.disabled = true;
@@ -72,14 +87,16 @@ document.getElementById('zx-form-queja').addEventListener('submit', async (event
 
   if (error) {
     console.error(error);
-    mensaje.textContent = 'No se pudo registrar la queja: ' + error.message;
-    mensaje.className = 'zx-mensaje zx-mensaje-error';
+    modalMensaje.textContent = 'No se pudo registrar la queja: ' + error.message;
+    modalMensaje.className = 'zx-mensaje zx-mensaje-error';
     return;
   }
 
+  const mensaje = document.getElementById('zx-mensaje');
   mensaje.textContent = `Queja registrada con folio ${data.folio}.`;
   mensaje.className = 'zx-mensaje zx-mensaje-ok';
   document.getElementById('zx-form-queja').reset();
+  cerrarModalNueva();
   await cargarMisQuejas();
 });
 
