@@ -13,8 +13,9 @@ tiempos.html             Solo Admin: monitor en vivo de quejas abiertas + report
 assets/css/estilos.css   Estilos compartidos (paleta de marca Zubex)
 assets/js/
   supabase-client.js     Inicializa el cliente de Supabase (URL + publishable key)
-  auth-guard.js          Exige sesión + rol correcto en cada pantalla, pinta el encabezado
+  auth-guard.js          Exige sesión + rol correcto en cada pantalla, pinta el encabezado (incluye modo noche)
   tiempo.js               Cronómetro en vivo del "tempo" activo de cada queja
+  detalle.js              Modal compartido "Ver detalles" de una queja (datos + línea de tiempo + dictamen)
   login.js, comercial.js, calidad.js, cedis.js, tiempos.js   Lógica de cada pantalla
 supabase/migrations/     Esquema completo de la base de datos (SQL)
 ```
@@ -45,6 +46,14 @@ Supabase Auth siempre necesita internamente un identificador con forma de correo
 ## Cómo se mueve el flujo
 
 Todas las transiciones de estatus de una queja pasan por funciones RPC en la base de datos (`queja_aceptar`, `queja_dictamen`, `recoleccion_enviar`, etc.), nunca por `update` directo desde el cliente. Cada función valida el rol de quien llama y el estatus actual antes de cambiar cualquier cosa. El detalle completo del flujo y de cada función está documentado en el proyecto de Claude de Zubex (documento `BASE-DE-DATOS.md`).
+
+## Dictamen de Calidad (VEN-F-08)
+
+El dictamen ya no es un texto libre: Calidad llena un formulario con los campos del formato oficial VEN-F-08 (tipo de acción, cantidad, desviación reportada, descripción del problema, causa raíz, equipo multidisciplinario, medidas de contención y preventivas, conclusión, recibido por). Se guarda estructurado en `dictamenes`/`dictamen_equipo`/`dictamen_medidas` (`supabase/migrations/20260928171133_dictamen_estructurado.sql`) vía el RPC `queja_dictamen(p_id, p_dictamen jsonb, p_aceptar)`.
+
+## Modo noche y ver detalles
+
+Cada pantalla tiene un botón para alternar modo claro/oscuro (se guarda en `localStorage` del navegador) y un botón "Ver detalles" en cada queja que abre un modal de solo lectura con todos sus datos, el dictamen si existe y la línea de tiempo de sus etapas.
 
 ## Pantalla de Tiempos (Admin)
 

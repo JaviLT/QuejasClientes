@@ -53,7 +53,7 @@ function mostrarBloqueo(mensaje) {
   document.getElementById('zx-btn-salir-bloqueo').addEventListener('click', cerrarSesion);
 }
 
-/** Pinta el encabezado compartido (logo, título de pantalla, usuario, botón salir). */
+/** Pinta el encabezado compartido (logo, título de pantalla, usuario, modo noche, botón salir). */
 export function pintarEncabezado(perfil, tituloPantalla) {
   const el = document.getElementById('zx-encabezado');
   if (!el) return;
@@ -65,10 +65,38 @@ export function pintarEncabezado(perfil, tituloPantalla) {
       </div>
       <div class="zx-header-usuario">
         <span>${escaparHtml(perfil.nombre_completo)} · <strong>${escaparHtml(perfil.rol)}</strong></span>
+        <button id="zx-btn-tema" class="zx-btn-tema" type="button" title="Cambiar a modo noche/día"></button>
         <button id="zx-btn-salir" class="zx-btn zx-btn-ghost zx-btn-sm">Cerrar sesión</button>
       </div>
     </div>`;
   document.getElementById('zx-btn-salir').addEventListener('click', cerrarSesion);
+  const btnTema = document.getElementById('zx-btn-tema');
+  pintarIconoTema(btnTema);
+  btnTema.addEventListener('click', () => {
+    alternarTema();
+    pintarIconoTema(btnTema);
+  });
+}
+
+const CLAVE_TEMA = 'zx-tema';
+
+function temaActual() {
+  return document.documentElement.getAttribute('data-tema') === 'oscuro' ? 'oscuro' : 'claro';
+}
+
+function pintarIconoTema(boton) {
+  boton.textContent = temaActual() === 'oscuro' ? '☀️' : '🌙';
+}
+
+/** Alterna entre modo claro/oscuro y lo guarda para futuras visitas. */
+export function alternarTema() {
+  const nuevo = temaActual() === 'oscuro' ? 'claro' : 'oscuro';
+  if (nuevo === 'oscuro') {
+    document.documentElement.setAttribute('data-tema', 'oscuro');
+  } else {
+    document.documentElement.removeAttribute('data-tema');
+  }
+  try { localStorage.setItem(CLAVE_TEMA, nuevo); } catch (e) { /* almacenamiento no disponible */ }
 }
 
 export function escaparHtml(texto) {

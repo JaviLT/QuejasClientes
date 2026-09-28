@@ -1,5 +1,6 @@
 import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml } from './auth-guard.js';
+import { botonDetalle, activarBotonesDetalle } from './detalle.js';
 
 const sesion = await exigirSesion(['comercial', 'admin']);
 if (sesion) {
@@ -86,7 +87,7 @@ async function cargarMisQuejas() {
   const { data: { session } } = await supabase.auth.getSession();
   const { data, error } = await supabase
     .from('quejas')
-    .select('folio, cliente, tipo_queja, estado, creada_en, catalogo_estados(etiqueta)')
+    .select('id, folio, cliente, tipo_queja, estado, creada_en, catalogo_estados(etiqueta)')
     .eq('creada_por', session.user.id)
     .order('creada_en', { ascending: false })
     .limit(20);
@@ -114,9 +115,11 @@ async function cargarMisQuejas() {
       </div>
       <div class="zx-fila-acciones">
         <span class="zx-contador">${escaparHtml(q.catalogo_estados?.etiqueta || q.estado)}</span>
+        ${botonDetalle(q.id)}
       </div>
     </div>
   `).join('');
+  activarBotonesDetalle(lista);
 }
 
 function escucharCambiosEnVivo() {

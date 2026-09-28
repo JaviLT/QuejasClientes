@@ -1,6 +1,7 @@
 import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml } from './auth-guard.js';
 import { iniciarCronometros, formatoDuracion } from './tiempo.js';
+import { botonDetalle, activarBotonesDetalle } from './detalle.js';
 
 const ESTADOS_TERMINALES = ['cerrada', 'rechazada_calidad', 'rechazada_dictamen', 'rechazada_revision', 'rechazada_nc'];
 
@@ -46,9 +47,13 @@ async function cargarQuejasAbiertas() {
         <span class="zx-fila-folio">${escaparHtml(q.folio)} · ${escaparHtml(q.cliente)}</span>
         <span class="zx-fila-meta">${escaparHtml(q.tipo_queja || 'Sin tipo')} · ${escaparHtml(q.tempo_label_activo || q.catalogo_estados?.etiqueta || '')}</span>
       </div>
-      <span class="zx-cronometro" data-desde="${q.tempo_activo_desde || ''}">--:--</span>
+      <div class="zx-fila-acciones">
+        <span class="zx-cronometro" data-desde="${q.tempo_activo_desde || ''}">--:--</span>
+        ${botonDetalle(q.id)}
+      </div>
     </div>
   `).join('');
+  activarBotonesDetalle(contenedor);
 }
 
 // ---------- Reporte por etapa ----------

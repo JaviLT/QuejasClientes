@@ -1,6 +1,7 @@
 import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml } from './auth-guard.js';
 import { iniciarCronometros } from './tiempo.js';
+import { botonDetalle, activarBotonesDetalle } from './detalle.js';
 
 const sesion = await exigirSesion(['cedis', 'admin']);
 if (sesion) {
@@ -53,10 +54,12 @@ async function cargarEspera() {
       </div>
       <span class="zx-cronometro" data-desde="${q.tempo_activo_desde || ''}">--:--</span>
       <div class="zx-fila-acciones">
+        ${botonDetalle(q.id)}
         <button class="zx-btn zx-btn-secundario zx-btn-sm" data-id="${q.id}" data-accion="material-recibido">Material recibido (generar folio)</button>
       </div>
     </div>
   `).join('');
+  activarBotonesDetalle(contenedor);
 
   contenedor.querySelectorAll('[data-accion="material-recibido"]').forEach((btn) => {
     btn.addEventListener('click', async () => {
@@ -165,11 +168,13 @@ async function cargarNc() {
       </div>
       <span class="zx-cronometro" data-desde="${q.tempo_activo_desde || ''}">--:--</span>
       <div class="zx-fila-acciones">
+        ${botonDetalle(q.id)}
         <button class="zx-btn zx-btn-exito zx-btn-sm" data-accion="aceptar">Aceptar NC</button>
         <button class="zx-btn zx-btn-peligro zx-btn-sm" data-accion="rechazar">Rechazar NC</button>
       </div>
     </div>
   `).join('');
+  activarBotonesDetalle(contenedor);
 
   contenedor.querySelectorAll('[data-accion]').forEach((btn) => {
     btn.addEventListener('click', async () => {
