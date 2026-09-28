@@ -2,6 +2,16 @@ import { supabase } from './supabase-client.js';
 
 const DESTINOS = { comercial: 'comercial.html', calidad: 'calidad.html', cedis: 'cedis.html' };
 
+// El usuario solo escribe una palabra (COMERCIAL, CALIDAD, CEDIS, ADMIN); por
+// dentro Supabase Auth siempre necesita un correo, así que se construye aquí
+// y nunca se le muestra a la persona que inicia sesión.
+const DOMINIO_INTERNO = 'zx-procesos.local';
+
+function construirCorreoInterno(usuario) {
+  const limpio = usuario.trim().toLowerCase().replace(/\s+/g, '');
+  return `${limpio}@${DOMINIO_INTERNO}`;
+}
+
 const form = document.getElementById('zx-form-login');
 const mensaje = document.getElementById('zx-mensaje');
 const btnEntrar = document.getElementById('zx-btn-entrar');
@@ -53,13 +63,14 @@ form.addEventListener('submit', async (evento) => {
   btnEntrar.disabled = true;
   btnEntrar.textContent = 'Entrando…';
 
-  const correo = document.getElementById('correo').value.trim();
+  const usuario = document.getElementById('usuario').value;
   const contrasena = document.getElementById('contrasena').value;
+  const correoInterno = construirCorreoInterno(usuario);
 
-  const { error } = await supabase.auth.signInWithPassword({ email: correo, password: contrasena });
+  const { error } = await supabase.auth.signInWithPassword({ email: correoInterno, password: contrasena });
 
   if (error) {
-    mostrarError('Correo o contraseña incorrectos.');
+    mostrarError('Usuario o contraseña incorrectos.');
     btnEntrar.disabled = false;
     btnEntrar.textContent = 'Entrar';
     return;

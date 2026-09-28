@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ZX · Procesos — Tiempos</title>
+<link rel="stylesheet" href="assets/css/estilos.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+  <header id="zx-encabezado"></header>
+
+  <main class="zx-contenedor">
+    <div id="zx-mensaje" class="zx-mensaje zx-oculto"></div>
+
+    <div class="zx-tarjeta">
+      <h2>Quejas abiertas ahora <span id="c-abiertas" class="zx-contador">0</span></h2>
+      <p class="zx-fila-meta" style="margin-top:-6px;">Cada cronómetro muestra cuánto lleva la queja en su etapa actual.</p>
+      <div id="lista-abiertas"></div>
+    </div>
+
+    <div class="zx-tarjeta">
+      <h2>Tiempo por etapa <span id="c-etapas" class="zx-contador">0</span></h2>
+      <p class="zx-fila-meta" style="margin-top:-6px;">Promedio, mínimo y máximo de cada etapa ya cerrada (histórico completo).</p>
+      <div id="tabla-etapas"></div>
+    </div>
+  </main>
+
+  <footer class="zx-pie">ZX · Procesos — Zubex</footer>
+
+  <script type="module" src="assets/js/tiempos.js"></script>
+</body>
+</html>

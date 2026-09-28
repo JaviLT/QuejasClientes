@@ -1,20 +1,21 @@
 # ZX · Procesos — Quejas de Cliente
 
-Front real (HTML/CSS/JS estático) conectado a Supabase, para registrar y dar seguimiento a quejas de cliente (formato VEN-F-03) por las áreas de Comercial, Calidad y CEDIS.
+Front real (HTML/CSS/JS estático) conectado a Supabase, para registrar y dar seguimiento a quejas de cliente (formato VEN-F-03) por las áreas de Comercial, Calidad y CEDIS, más una pantalla de Tiempos para Admin.
 
 ## Estructura
 
 ```
-index.html              Login (correo + contraseña)
+index.html              Login (usuario + contraseña — sin formato de correo, ver abajo)
 comercial.html           Levantar una queja nueva
 calidad.html             Bandejas de Calidad (aceptar/rechazar, dictamen, revisión…)
 cedis.html               Bandejas de CEDIS (recolección, envío a planta, notas de crédito)
+tiempos.html             Solo Admin: monitor en vivo de quejas abiertas + reporte de tiempos por etapa
 assets/css/estilos.css   Estilos compartidos (paleta de marca Zubex)
 assets/js/
   supabase-client.js     Inicializa el cliente de Supabase (URL + publishable key)
   auth-guard.js          Exige sesión + rol correcto en cada pantalla, pinta el encabezado
   tiempo.js               Cronómetro en vivo del "tempo" activo de cada queja
-  login.js, comercial.js, calidad.js, cedis.js   Lógica de cada pantalla
+  login.js, comercial.js, calidad.js, cedis.js, tiempos.js   Lógica de cada pantalla
 supabase/migrations/     Esquema completo de la base de datos (SQL)
 ```
 
@@ -33,13 +34,21 @@ Es un sitio 100% estático: no necesita build ni servidor propio. Se puede publi
 
 ### Usuarios
 
-Este repositorio **no** crea usuarios (a propósito: las contraseñas no deben vivir en control de versiones). Créalos una vez desde el Dashboard de Supabase → Authentication → Users, o con un script separado fuera de este repo, y asígnales su `rol` (`comercial`, `calidad`, `cedis` o `admin`) en la tabla `profiles`.
+Este repositorio **no** crea usuarios (a propósito: las contraseñas no deben vivir en control de versiones). Créalos una vez desde el Dashboard de Supabase → Authentication → Users, o con un script separado fuera de este repo, y asígnales su `rol` (`comercial`, `calidad`, `cedis` o `admin`) en la tabla `profiles`. El correo interno de cada cuenta sigue el patrón `<usuario>@zx-procesos.local` (ej. `comercial@zx-procesos.local`), aunque en el login la persona nunca ve ni escribe esa parte.
 
-Hoy existen 3 cuentas compartidas por área (Comercial/Calidad/CEDIS); en el futuro se planea pasar a una cuenta por empleado.
+Hoy existen 4 cuentas compartidas (Comercial/Calidad/CEDIS/Admin); en el futuro se planea pasar a una cuenta por empleado.
+
+### Login sin formato de correo
+
+Supabase Auth siempre necesita internamente un identificador con forma de correo, pero la persona que inicia sesión solo escribe una palabra (`COMERCIAL`, `CALIDAD`, `CEDIS`, `ADMIN`). `assets/js/login.js` construye el correo interno (`usuario.toLowerCase() + '@zx-procesos.local'`) antes de llamar a `signInWithPassword` — si más adelante se pasa a cuentas por empleado con correos reales, basta con cambiar esa función.
 
 ## Cómo se mueve el flujo
 
 Todas las transiciones de estatus de una queja pasan por funciones RPC en la base de datos (`queja_aceptar`, `queja_dictamen`, `recoleccion_enviar`, etc.), nunca por `update` directo desde el cliente. Cada función valida el rol de quien llama y el estatus actual antes de cambiar cualquier cosa. El detalle completo del flujo y de cada función está documentado en el proyecto de Claude de Zubex (documento `BASE-DE-DATOS.md`).
+
+## Pantalla de Tiempos (Admin)
+
+Solo la cuenta `admin` puede entrar a `tiempos.html`. Muestra dos cosas: un monitor en vivo de todas las quejas que aún no llegaron a un estado terminal (con el cronómetro de su etapa actual), y un reporte con el promedio/mínimo/máximo de cuánto tarda cada etapa, calculado sobre el historial ya cerrado en la tabla `tempos` a través de la vista `vw_tiempos_por_etapa` (`supabase/migrations/20260928155220_vista_reporte_tiempos_por_etapa.sql`).
 
 ## Pendientes conocidos
 
