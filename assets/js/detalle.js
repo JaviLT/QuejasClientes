@@ -1,7 +1,6 @@
 // ZX · Procesos — modal compartido "Ver detalles" de una queja (datos + línea de tiempo + dictamen si existe).
 import { supabase } from './supabase-client.js';
 import { escaparHtml } from './auth-guard.js';
-import { formatoDuracionFija } from './tiempo.js';
 
 function formatoFecha(iso) {
   if (!iso) return '—';
@@ -73,7 +72,7 @@ export async function abrirDetalleQueja(id) {
       <span class="zx-linea-tiempo-punto"></span>
       <div class="zx-linea-tiempo-texto">
         <strong>${escaparHtml(t.etiqueta)}${t.resultado ? ' · ' + escaparHtml(t.resultado) : ''}</strong>
-        <span class="zx-lt-meta">${formatoFecha(t.inicio)} → ${formatoFecha(t.fin)} (${formatoDuracionFija(Number(t.duracion_ms) || 0)})</span>
+        <span class="zx-lt-meta">${formatoFecha(t.fin)}</span>
         ${t.texto ? `<span class="zx-lt-meta">${escaparHtml(t.texto)}</span>` : ''}
       </div>
     </div>`).join('') || '<p class="zx-vacio">Todavía no hay etapas cerradas.</p>';

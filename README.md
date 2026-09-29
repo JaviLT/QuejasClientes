@@ -6,17 +6,18 @@ Front real (HTML/CSS/JS estático) conectado a Supabase, para registrar y dar se
 
 ```
 index.html              Login (usuario + contraseña — sin formato de correo, ver abajo)
-comercial.html           Mis quejas + botón "Nueva queja" (modal)
+comercial.html           Mis quejas + botón "+ Nueva queja" (en la barra superior, abre un modal)
 calidad.html             Bandejas de Calidad (esperando muestra, dictamen, revisión…)
-cedis.html               Bandejas de CEDIS (recolección sin queja arriba, espera, envío a planta, notas de crédito)
-tiempos.html             Solo Admin: todas las quejas (cualquier estatus) con Ver detalles, Eliminar y tiempos por etapa desplegables + reporte agregado por etapa
+cedis.html               Bandejas de CEDIS (espera de recolección, envío a planta, notas de crédito) + botón "Generar folio sin queja" (en la barra superior)
+tiempos.html             Solo Admin: todas las quejas (cualquier estatus) con Ver detalles, Eliminar y tiempos por etapa desplegables
 usuarios.html            Solo Admin: crear usuarios nuevos + lista de usuarios existentes
 assets/css/estilos.css   Estilos compartidos (paleta de marca Zubex)
 assets/js/
   supabase-client.js     Inicializa el cliente de Supabase (URL + publishable key)
-  auth-guard.js          Exige sesión + rol correcto en cada pantalla, pinta el encabezado (modo noche + menú de admin)
-  tiempo.js               Duración fija y legible de cada etapa (minutos/horas/días/semanas/meses/años) — nunca un reloj en vivo
-  detalle.js              Modal compartido "Ver detalles" de una queja (datos + línea de tiempo + dictamen)
+  version.js             Número de versión visible de la app (ver "Versión de la app" abajo)
+  auth-guard.js          Exige sesión + rol correcto en cada pantalla, pinta el encabezado (modo noche, menú de admin, botón de acción de la pantalla y la versión en el pie), y centraliza el doble check (`confirmarAccion`)
+  tiempo.js               Duración fija y legible de cada etapa (minutos/horas/días/semanas/meses/años) — nunca un reloj en vivo, y solo la usa la pantalla de Admin
+  detalle.js              Modal compartido "Ver detalles" de una queja (datos + línea de tiempo + dictamen) — la línea de tiempo solo muestra la fecha en que se cerró cada etapa, sin duración
   login.js, comercial.js, calidad.js, cedis.js, tiempos.js, usuarios.js   Lógica de cada pantalla
 supabase/migrations/     Esquema completo de la base de datos (SQL)
 supabase/functions/admin-crear-usuario/   Edge Function para crear usuarios (usa la service_role key del lado del servidor)
@@ -55,16 +56,36 @@ El dictamen ya no es un texto libre: Calidad llena un formulario con los campos 
 
 ## Modo noche y ver detalles
 
-Cada pantalla tiene un botón para alternar modo claro/oscuro (se guarda en `localStorage` del navegador) y un botón "Ver detalles" en cada queja que abre un modal de solo lectura con todos sus datos, el dictamen si existe y la línea de tiempo de sus etapas.
+Cada pantalla tiene un botón para alternar modo claro/oscuro (se guarda en `localStorage` del navegador) y un botón "Ver detalles" en cada queja que abre un modal de solo lectura con todos sus datos, el dictamen si existe y la línea de tiempo de sus etapas. Esa línea de tiempo (compartida por las cuatro pantallas) solo muestra, por cada etapa ya cerrada, su etiqueta y la fecha/hora en que terminó — ningún dato de duración ni de hora de inicio, porque los tiempos son información exclusiva de Admin (ver siguiente sección).
+
+## Tiempos: solo para Admin
+
+Ninguna pantalla de Comercial, Calidad o CEDIS muestra duraciones, cronómetros ni tiempos transcurridos — ni en las bandejas ni en "Ver detalles". Esa información vive únicamente en `tiempos.html`, la pantalla de Admin.
 
 ## Pantallas de Admin (Tiempos / Usuarios)
 
 La cuenta `admin` entra directo a `tiempos.html` (ya no elige entre 4 pantallas, y ya no tiene acceso a Comercial/Calidad/CEDIS). Desde el encabezado se mueve entre sus dos pantallas:
 
-- **Tiempos** — lista todas las quejas sin importar su estatus, cada una con botones "Ver detalles" y "Eliminar" (RPC `queja_eliminar`, borra en cascada el dictamen, la bitácora de tiempos y desliga cualquier folio de recolección). Al darle clic a "Ver tiempos" se abre una sección desplegable por queja con la duración de cada etapa ya cerrada y, si la queja sigue abierta, la etapa actual con su tiempo transcurrido. Debajo hay un reporte agregado (promedio/mínimo/máximo) de cuánto tarda cada etapa, calculado sobre el historial ya cerrado en la tabla `tempos` a través de la vista `vw_tiempos_por_etapa` (`supabase/migrations/20260928155220_vista_reporte_tiempos_por_etapa.sql`). Ninguna duración se muestra como reloj en vivo: siempre es un texto fijo (minutos/horas/días/semanas/meses/años) que se actualiza cada minuto (`assets/js/tiempo.js`).
+- **Tiempos** — lista todas las quejas sin importar su estatus, cada una con botones "Ver detalles" y "Eliminar" (RPC `queja_eliminar`, borra en cascada el dictamen, la bitácora de tiempos y desliga cualquier folio de recolección). Al darle clic a "Ver tiempos" se abre una sección desplegable por queja con la duración de cada etapa ya cerrada y, si la queja sigue abierta, la etapa actual con su tiempo transcurrido. Ninguna duración se muestra como reloj en vivo: siempre es un texto fijo (minutos/horas/días/semanas/meses/años) que se actualiza cada minuto (`assets/js/tiempo.js`). El reporte agregado por etapa (promedio/mínimo/máximo, antes al pie de esta pantalla) se quitó del front por pedido de negocio; la vista `vw_tiempos_por_etapa` sigue existiendo en la base de datos por si se vuelve a necesitar, pero ya no se consulta desde aquí.
 - **Usuarios** (`usuarios.html`) — crea cuentas nuevas llamando a la Edge Function `admin-crear-usuario` (`supabase/functions/admin-crear-usuario/`), que valida que quien llama sea admin y usa la `service_role key` del lado del servidor.
 
 Desde el 28 de septiembre de 2026 una queja nueva ya no pasa por el estatus `nueva`: arranca directo en `esperando_muestra` (por eso Calidad ya no tiene bandeja de "Quejas nuevas").
+
+## Versión de la app
+
+`assets/js/version.js` exporta `APP_VERSION`, un número de versión visible que se pinta en el pie de página de cada pantalla (incluyendo el login) vía `pintarPie()` en `auth-guard.js`. Sirve para que cualquiera — sobre todo Admin — pueda confirmar de un vistazo que ya tiene la versión más reciente desplegada. **Convención:** cada ronda de cambios que se entregue debe subir este número (minor para pantallas/funciones nuevas o cambiadas, patch para una corrección chica).
+
+## Botones de acción en la barra superior
+
+El botón principal de cada pantalla (Comercial: "+ Nueva queja"; CEDIS: "Generar folio sin queja") vive en la barra superior junto al nombre de usuario, no dentro de una tarjeta. Se pinta pasando `opciones.boton = { id, texto, titulo? }` a `pintarEncabezado(perfil, tituloPantalla, opciones)`; quien llama debe engancharle su propio listener después, ya que `pintarEncabezado` solo dibuja el `<button>`.
+
+## Dictamen de Calidad: pop up
+
+La bandeja "Dictamen en proceso" de Calidad ya no muestra el formulario VEN-F-08 completo por cada queja: cada fila solo tiene "Ver detalles" y un botón "Iniciar dictamen". Al darle clic se abre un pop up (`#zx-modal-dictamen-fondo` en `calidad.html`, construido por `abrirModalDictamen` en `calidad.js`) con el formulario completo; Aceptado/Rechazado sigue llamando al mismo RPC `queja_dictamen`.
+
+## Doble check antes de cambiar el proceso de una queja
+
+Todo botón que dispara un cambio de estatus sobre una queja (aceptar, rechazar, muestra/material recibido, dictamen, revisión, notas de crédito, enviar a planta, eliminar, generar folio sin queja, etc.) pide confirmación antes de ejecutar la acción, para evitar clics accidentales. Es una ventana `confirm()` del navegador, centralizada en `confirmarAccion(mensaje)` (`assets/js/auth-guard.js`) — si más adelante se quiere otro estilo de confirmación, solo hay que tocar esa función. Registrar una queja nueva (Comercial) y crear un usuario (Admin → Usuarios) quedan fuera de esta regla porque son una captura, no un cambio de proceso sobre una queja existente.
 
 ## Pendientes conocidos
 

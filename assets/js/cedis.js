@@ -1,12 +1,33 @@
 import { supabase } from './supabase-client.js';
-import { exigirSesion, pintarEncabezado, escaparHtml } from './auth-guard.js';
+import { exigirSesion, pintarEncabezado, escaparHtml, confirmarAccion } from './auth-guard.js';
 import { botonDetalle, activarBotonesDetalle } from './detalle.js';
 
 const sesion = await exigirSesion(['cedis']);
 if (sesion) {
-  pintarEncabezado(sesion.perfil, 'CEDIS');
+  pintarEncabezado(sesion.perfil, 'CEDIS', {
+    boton: {
+      id: 'btn-sin-queja',
+      texto: 'Generar folio sin queja',
+      titulo: 'Genera un folio de recolección cuando llega material sin que haya una queja registrada.',
+    },
+  });
   await cargarTodo();
   escucharCambiosEnVivo();
+
+  document.getElementById('btn-sin-queja').addEventListener('click', async (evento) => {
+    if (!confirmarAccion('¿Confirmas generar un folio de recolección sin queja asociada?')) return;
+    const btn = evento.currentTarget;
+    btn.disabled = true;
+    const { data: idFolio, error } = await supabase.rpc('recoleccion_sin_queja');
+    btn.disabled = false;
+    if (error) {
+      mostrarMensaje('No se pudo generar el folio: ' + error.message, false);
+      return;
+    }
+    const { data: fila } = await supabase.from('recolecciones').select('folio').eq('id', idFolio).single();
+    mostrarMensaje(`Folio generado: ${fila?.folio || idFolio}.`, true);
+    await cargarTodo();
+  });
 }
 
 const mensaje = document.getElementById('zx-mensaje');
@@ -59,6 +80,8 @@ async function cargarEspera() {
 
   contenedor.querySelectorAll('[data-accion="material-recibido"]').forEach((btn) => {
     btn.addEventListener('click', async () => {
+      const folio = btn.closest('.zx-fila').querySelector('.zx-fila-folio').textContent;
+      if (!confirmarAccion(`¿Confirmas que el material de ${folio} ya llegó y quieres generar su folio de recolección?`)) return;
       btn.disabled = true;
       const id = btn.getAttribute('data-id');
       const { data: idFolio, error } = await supabase.rpc('recoleccion_material_recibido', { p_queja_id: id });
@@ -73,21 +96,6 @@ async function cargarEspera() {
     });
   });
 }
-
-// ---------- Recolección sin queja ----------
-document.getElementById('btn-sin-queja').addEventListener('click', async (evento) => {
-  const btn = evento.currentTarget;
-  btn.disabled = true;
-  const { data: idFolio, error } = await supabase.rpc('recoleccion_sin_queja');
-  btn.disabled = false;
-  if (error) {
-    mostrarMensaje('No se pudo generar el folio: ' + error.message, false);
-    return;
-  }
-  const { data: fila } = await supabase.from('recolecciones').select('folio').eq('id', idFolio).single();
-  mostrarMensaje(`Folio generado: ${fila?.folio || idFolio}.`, true);
-  await cargarTodo();
-});
 
 // ---------- Folios pendientes de enviar ----------
 async function cargarPendientesDeEnvio() {
@@ -123,6 +131,8 @@ async function cargarPendientesDeEnvio() {
 
   contenedor.querySelectorAll('[data-accion="enviar"]').forEach((btn) => {
     btn.addEventListener('click', async () => {
+      const folio = btn.closest('.zx-fila').querySelector('.zx-fila-folio').textContent;
+      if (!confirmarAccion(`¿Confirmas marcar el folio ${folio} como enviado a planta?`)) return;
       btn.disabled = true;
       const { error } = await supabase.rpc('recoleccion_enviar', { p_id: btn.getAttribute('data-id') });
       if (error) {
@@ -173,8 +183,14 @@ async function cargarNc() {
 
   contenedor.querySelectorAll('[data-accion]').forEach((btn) => {
     btn.addEventListener('click', async () => {
-      const id = btn.closest('[data-id]').getAttribute('data-id');
+      const fila = btn.closest('[data-id]');
+      const id = fila.getAttribute('data-id');
+      const folio = fila.querySelector('.zx-fila-folio').textContent;
       const aceptar = btn.getAttribute('data-accion') === 'aceptar';
+      const mensajeConfirmacion = aceptar
+        ? `¿Confirmas ACEPTAR la nota de crédito de ${folio}? El folio quedará cerrado.`
+        : `¿Confirmas RECHAZAR la nota de crédito de ${folio}?`;
+      if (!confirmarAccion(mensajeConfirmacion)) return;
       btn.disabled = true;
       const { error } = await supabase.rpc('queja_nc_decidir', { p_id: id, p_aceptar: aceptar });
       if (error) {

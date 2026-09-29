@@ -1,5 +1,6 @@
 // ZX · Procesos — control de sesión y de rol, compartido por comercial/calidad/cedis.
 import { supabase } from './supabase-client.js';
+import { APP_VERSION } from './version.js';
 
 /**
  * Exige que haya una sesión activa y (opcionalmente) un rol permitido.
@@ -58,8 +59,15 @@ const PANTALLAS_ADMIN = [
   { href: 'usuarios.html', etiqueta: 'Usuarios' },
 ];
 
-/** Pinta el encabezado compartido (logo, título de pantalla, usuario, modo noche, botón salir). */
-export function pintarEncabezado(perfil, tituloPantalla) {
+/**
+ * Pinta el encabezado compartido (logo, título de pantalla, usuario, modo noche, botón salir).
+ * @param {object} perfil
+ * @param {string} tituloPantalla
+ * @param {{boton?: {id: string, texto: string, titulo?: string}}} [opciones] - botón de acción
+ *   extra a mostrar en la barra superior (ej. "+ Nueva queja"). Solo se pinta el <button>; quien
+ *   llama debe engancharle su propio listener después de esta función.
+ */
+export function pintarEncabezado(perfil, tituloPantalla, opciones = {}) {
   const el = document.getElementById('zx-encabezado');
   if (!el) return;
   const paginaActual = location.pathname.split('/').pop();
@@ -67,6 +75,9 @@ export function pintarEncabezado(perfil, tituloPantalla) {
     <nav class="zx-header-nav-admin">
       ${PANTALLAS_ADMIN.map((p) => `<a class="${p.href === paginaActual ? 'zx-nav-activo' : ''}" href="${p.href}">${p.etiqueta}</a>`).join('')}
     </nav>` : '';
+  const botonAccion = opciones.boton
+    ? `<button type="button" id="${opciones.boton.id}" class="zx-btn zx-btn-primario zx-btn-sm"${opciones.boton.titulo ? ` title="${escaparHtml(opciones.boton.titulo)}"` : ''}>${escaparHtml(opciones.boton.texto)}</button>`
+    : '';
   el.innerHTML = `
     <div class="zx-header-inner">
       <div class="zx-header-marca">
@@ -74,6 +85,7 @@ export function pintarEncabezado(perfil, tituloPantalla) {
         <span class="zx-header-titulo">${tituloPantalla}</span>
       </div>
       ${navAdmin}
+      ${botonAccion}
       <div class="zx-header-usuario">
         <span>${escaparHtml(perfil.nombre_completo)} · <strong>${escaparHtml(perfil.rol)}</strong></span>
         <button id="zx-btn-tema" class="zx-btn-tema" type="button" title="Cambiar a modo noche/día"></button>
@@ -87,6 +99,22 @@ export function pintarEncabezado(perfil, tituloPantalla) {
     alternarTema();
     pintarIconoTema(btnTema);
   });
+  pintarPie();
+}
+
+/** Escribe la versión de la app en el pie de página (assets/js/version.js), en cualquier pantalla que tenga <footer class="zx-pie">. */
+export function pintarPie() {
+  const el = document.querySelector('footer.zx-pie');
+  if (el) el.textContent = `Quejas de Clientes — Zubex · v${APP_VERSION}`;
+}
+
+/**
+ * Doble check antes de una acción que cambia el proceso de una queja (para evitar clics
+ * accidentales). Hoy es un simple confirm() del navegador; centralizado aquí para que, si
+ * más adelante se cambia el estilo de confirmación, solo haya que tocar esta función.
+ */
+export function confirmarAccion(mensaje) {
+  return window.confirm(mensaje);
 }
 
 const CLAVE_TEMA = 'zx-tema';

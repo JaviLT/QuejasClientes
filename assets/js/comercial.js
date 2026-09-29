@@ -4,10 +4,79 @@ import { botonDetalle, activarBotonesDetalle } from './detalle.js';
 
 const sesion = await exigirSesion(['comercial']);
 if (sesion) {
-  pintarEncabezado(sesion.perfil, 'Comercial');
+  pintarEncabezado(sesion.perfil, 'Comercial', {
+    boton: { id: 'zx-btn-abrir-nueva', texto: '+ Nueva queja' },
+  });
   await cargarCatalogoTiposQueja();
   await cargarMisQuejas();
   escucharCambiosEnVivo();
+
+  const modalFondo = document.getElementById('zx-modal-nueva-fondo');
+  const modalMensaje = document.getElementById('zx-modal-mensaje');
+
+  function abrirModalNueva() {
+    modalMensaje.classList.add('zx-oculto');
+    modalFondo.classList.remove('zx-oculto');
+  }
+
+  function cerrarModalNueva() {
+    modalFondo.classList.add('zx-oculto');
+  }
+
+  document.getElementById('zx-btn-abrir-nueva').addEventListener('click', abrirModalNueva);
+  document.getElementById('zx-btn-cerrar-nueva').addEventListener('click', cerrarModalNueva);
+  modalFondo.addEventListener('click', (evento) => { if (evento.target === modalFondo) cerrarModalNueva(); });
+
+  document.getElementById('zx-form-queja').addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    modalMensaje.classList.add('zx-oculto');
+
+    // Registrar una queja nueva es una captura, no un cambio de proceso sobre una queja
+    // existente, así que aquí no pedimos doble check (a diferencia de aceptar/rechazar/etc.).
+    const btn = document.getElementById('zx-btn-guardar');
+    btn.disabled = true;
+    btn.textContent = 'Guardando…';
+
+    const prioridadTexto = document.getElementById('prioridad').value;
+
+    const nuevaQueja = {
+      cliente: valorOTexto('cliente'),
+      tipo_queja: valorOTexto('tipo_queja'),
+      producto: valorOTexto('producto'),
+      codigo: valorOTexto('codigo'),
+      pedido: valorOTexto('pedido'),
+      factura: valorOTexto('factura'),
+      lote: valorOTexto('lote'),
+      prioridad: prioridadTexto === '' ? null : Number(prioridadTexto),
+      d2_quien: valorOTexto('d2_quien'),
+      d2_que: valorOTexto('d2_que'),
+      d2_porque: valorOTexto('d2_porque'),
+      d2_cuando: valorOTexto('d2_cuando'),
+      d2_donde: valorOTexto('d2_donde'),
+      d2_cuanto: valorOTexto('d2_cuanto'),
+    };
+    // Nota: estado, creada_por, tempo_activo_desde y tempo_label_activo los fija
+    // el servidor (trigger trg_inicializar_queja) — el cliente nunca los manda.
+
+    const { data, error } = await supabase.from('quejas').insert(nuevaQueja).select('folio').single();
+
+    btn.disabled = false;
+    btn.textContent = 'Registrar queja';
+
+    if (error) {
+      console.error(error);
+      modalMensaje.textContent = 'No se pudo registrar la queja: ' + error.message;
+      modalMensaje.className = 'zx-mensaje zx-mensaje-error';
+      return;
+    }
+
+    const mensaje = document.getElementById('zx-mensaje');
+    mensaje.textContent = `Queja registrada con folio ${data.folio}.`;
+    mensaje.className = 'zx-mensaje zx-mensaje-ok';
+    document.getElementById('zx-form-queja').reset();
+    cerrarModalNueva();
+    await cargarMisQuejas();
+  });
 }
 
 async function cargarCatalogoTiposQueja() {
@@ -34,71 +103,6 @@ function valorOTexto(id) {
   const v = el.value.trim();
   return v === '' ? null : v;
 }
-
-const modalFondo = document.getElementById('zx-modal-nueva-fondo');
-const modalMensaje = document.getElementById('zx-modal-mensaje');
-
-function abrirModalNueva() {
-  modalMensaje.classList.add('zx-oculto');
-  modalFondo.classList.remove('zx-oculto');
-}
-
-function cerrarModalNueva() {
-  modalFondo.classList.add('zx-oculto');
-}
-
-document.getElementById('zx-btn-abrir-nueva').addEventListener('click', abrirModalNueva);
-document.getElementById('zx-btn-cerrar-nueva').addEventListener('click', cerrarModalNueva);
-modalFondo.addEventListener('click', (evento) => { if (evento.target === modalFondo) cerrarModalNueva(); });
-
-document.getElementById('zx-form-queja').addEventListener('submit', async (evento) => {
-  evento.preventDefault();
-  modalMensaje.classList.add('zx-oculto');
-
-  const btn = document.getElementById('zx-btn-guardar');
-  btn.disabled = true;
-  btn.textContent = 'Guardando…';
-
-  const prioridadTexto = document.getElementById('prioridad').value;
-
-  const nuevaQueja = {
-    cliente: valorOTexto('cliente'),
-    tipo_queja: valorOTexto('tipo_queja'),
-    producto: valorOTexto('producto'),
-    codigo: valorOTexto('codigo'),
-    pedido: valorOTexto('pedido'),
-    factura: valorOTexto('factura'),
-    lote: valorOTexto('lote'),
-    prioridad: prioridadTexto === '' ? null : Number(prioridadTexto),
-    d2_quien: valorOTexto('d2_quien'),
-    d2_que: valorOTexto('d2_que'),
-    d2_porque: valorOTexto('d2_porque'),
-    d2_cuando: valorOTexto('d2_cuando'),
-    d2_donde: valorOTexto('d2_donde'),
-    d2_cuanto: valorOTexto('d2_cuanto'),
-  };
-  // Nota: estado, creada_por, tempo_activo_desde y tempo_label_activo los fija
-  // el servidor (trigger trg_inicializar_queja) — el cliente nunca los manda.
-
-  const { data, error } = await supabase.from('quejas').insert(nuevaQueja).select('folio').single();
-
-  btn.disabled = false;
-  btn.textContent = 'Registrar queja';
-
-  if (error) {
-    console.error(error);
-    modalMensaje.textContent = 'No se pudo registrar la queja: ' + error.message;
-    modalMensaje.className = 'zx-mensaje zx-mensaje-error';
-    return;
-  }
-
-  const mensaje = document.getElementById('zx-mensaje');
-  mensaje.textContent = `Queja registrada con folio ${data.folio}.`;
-  mensaje.className = 'zx-mensaje zx-mensaje-ok';
-  document.getElementById('zx-form-queja').reset();
-  cerrarModalNueva();
-  await cargarMisQuejas();
-});
 
 async function cargarMisQuejas() {
   const { data: { session } } = await supabase.auth.getSession();

@@ -1,4 +1,7 @@
 import { supabase } from './supabase-client.js';
+import { pintarPie } from './auth-guard.js';
+
+pintarPie();
 
 const DESTINOS = { comercial: 'comercial.html', calidad: 'calidad.html', cedis: 'cedis.html', admin: 'tiempos.html' };
 

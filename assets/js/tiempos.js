@@ -23,7 +23,6 @@ function mostrarMensaje(texto, ok) {
 
 async function cargarTodo() {
   await cargarQuejas();
-  await cargarReportePorEtapa();
 }
 
 // ---------- Todas las quejas (cualquier estatus) ----------
@@ -135,40 +134,6 @@ async function cargarTiemposDeQueja(id, panel, fila) {
     </div>` : '';
 
   panel.innerHTML = `<div class="zx-linea-tiempo">${lineaTiempo}</div>${etapaActual}`;
-}
-
-// ---------- Reporte por etapa ----------
-async function cargarReportePorEtapa() {
-  const { data, error } = await supabase
-    .from('vw_tiempos_por_etapa')
-    .select('etiqueta, cantidad, promedio_ms, minimo_ms, maximo_ms')
-    .order('etiqueta', { ascending: true });
-
-  const contenedor = document.getElementById('tabla-etapas');
-  if (error) {
-    contenedor.innerHTML = `<p class="zx-vacio">${escaparHtml(error.message)}</p>`;
-    return;
-  }
-  document.getElementById('c-etapas').textContent = data.length;
-
-  if (data.length === 0) {
-    contenedor.innerHTML = '<p class="zx-vacio">Todavía no hay etapas cerradas para analizar.</p>';
-    return;
-  }
-
-  contenedor.innerHTML = data.map((fila) => `
-    <div class="zx-fila">
-      <div class="zx-fila-info">
-        <span class="zx-fila-folio">${escaparHtml(fila.etiqueta)}</span>
-        <span class="zx-fila-meta">${fila.cantidad} registro${fila.cantidad === 1 ? '' : 's'}</span>
-      </div>
-      <div class="zx-fila-acciones">
-        <span class="zx-cronometro" title="Promedio">Prom. ${formatoDuracionFija(Number(fila.promedio_ms))}</span>
-        <span class="zx-cronometro" title="Mínimo">Mín. ${formatoDuracionFija(Number(fila.minimo_ms))}</span>
-        <span class="zx-cronometro" title="Máximo">Máx. ${formatoDuracionFija(Number(fila.maximo_ms))}</span>
-      </div>
-    </div>
-  `).join('');
 }
 
 function escucharCambiosEnVivo() {

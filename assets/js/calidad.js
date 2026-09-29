@@ -1,5 +1,5 @@
 import { supabase } from './supabase-client.js';
-import { exigirSesion, pintarEncabezado, escaparHtml } from './auth-guard.js';
+import { exigirSesion, pintarEncabezado, escaparHtml, confirmarAccion } from './auth-guard.js';
 import { botonDetalle, activarBotonesDetalle } from './detalle.js';
 
 const sesion = await exigirSesion(['calidad']);
@@ -72,12 +72,28 @@ async function renderizarSimple(contenedorId, contadorId, estado, botones) {
   contenedor.querySelectorAll('[data-accion]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const id = btn.closest('[data-id]').getAttribute('data-id');
+      const folio = btn.closest('.zx-fila').querySelector('.zx-fila-folio').textContent;
       const accion = btn.getAttribute('data-accion');
-      btn.disabled = true;
-      if (accion === 'aceptar') await llamarRpc('queja_aceptar', { p_id: id }, 'Queja aceptada. Pasa a espera de muestra.');
-      if (accion === 'rechazar') await llamarRpc('queja_rechazar', { p_id: id }, 'Queja rechazada.');
-      if (accion === 'muestra_recibida') await llamarRpc('queja_muestra_recibida', { p_id: id }, 'Muestra marcada como recibida. Pasa a dictamen.');
-      if (accion === 'material_recibido') await llamarRpc('queja_material_recibido_calidad', { p_id: id }, 'Material recibido. Pasa a revisión.');
+      if (accion === 'aceptar') {
+        if (!confirmarAccion(`¿Confirmas ACEPTAR la queja ${folio}? Pasará a espera de muestra.`)) return;
+        btn.disabled = true;
+        await llamarRpc('queja_aceptar', { p_id: id }, 'Queja aceptada. Pasa a espera de muestra.');
+      }
+      if (accion === 'rechazar') {
+        if (!confirmarAccion(`¿Confirmas RECHAZAR la queja ${folio}?`)) return;
+        btn.disabled = true;
+        await llamarRpc('queja_rechazar', { p_id: id }, 'Queja rechazada.');
+      }
+      if (accion === 'muestra_recibida') {
+        if (!confirmarAccion(`¿Confirmas que la muestra de ${folio} ya fue recibida? Pasará a dictamen.`)) return;
+        btn.disabled = true;
+        await llamarRpc('queja_muestra_recibida', { p_id: id }, 'Muestra marcada como recibida. Pasa a dictamen.');
+      }
+      if (accion === 'material_recibido') {
+        if (!confirmarAccion(`¿Confirmas que el material de ${folio} ya llegó a planta? Pasará a revisión.`)) return;
+        btn.disabled = true;
+        await llamarRpc('queja_material_recibido_calidad', { p_id: id }, 'Material recibido. Pasa a revisión.');
+      }
     });
   });
   activarBotonesDetalle(contenedor);
@@ -109,10 +125,15 @@ async function renderizarConTexto(contenedorId, contadorId, estado, rpcNombre, e
 
   contenedor.querySelectorAll('[data-id]').forEach((fila) => {
     const id = fila.getAttribute('data-id');
+    const folio = fila.querySelector('.zx-fila-folio').textContent;
     const textarea = fila.querySelector('[data-texto]');
     fila.querySelectorAll('[data-accion]').forEach((btn) => {
       btn.addEventListener('click', async () => {
         const aceptar = btn.getAttribute('data-accion') === 'aceptar';
+        const mensajeConfirmacion = aceptar
+          ? `¿Confirmas ACEPTAR la revisión de ${folio}? Se generará la nota de crédito.`
+          : `¿Confirmas RECHAZAR la revisión de ${folio}?`;
+        if (!confirmarAccion(mensajeConfirmacion)) return;
         btn.disabled = true;
         const ok = await llamarRpc(
           rpcNombre,
@@ -126,8 +147,38 @@ async function renderizarConTexto(contenedorId, contadorId, estado, rpcNombre, e
   activarBotonesDetalle(contenedor);
 }
 
-// ---------- Dictamen (VEN-F-08): formulario estructurado ----------
-function filaEquipo(indice) {
+// ---------- Dictamen (VEN-F-08): lista con "Iniciar dictamen" + formulario en pop up ----------
+async function renderizarDictamenLista(contenedorId, contadorId, estado) {
+  const filas = await obtenerQuejasPorEstado(estado);
+  document.getElementById(contadorId).textContent = filas.length;
+  const contenedor = document.getElementById(contenedorId);
+
+  if (filas.length === 0) {
+    contenedor.innerHTML = '<p class="zx-vacio">No hay quejas en esta bandeja.</p>';
+    return;
+  }
+
+  contenedor.innerHTML = filas.map((q) => `
+    <div class="zx-fila">
+      ${encabezadoFila(q)}
+      <div class="zx-fila-acciones" data-id="${q.id}">
+        ${botonDetalle(q.id)}
+        <button type="button" class="zx-btn zx-btn-secundario zx-btn-sm" data-accion="iniciar-dictamen">Iniciar dictamen</button>
+      </div>
+    </div>
+  `).join('');
+
+  contenedor.querySelectorAll('[data-accion="iniciar-dictamen"]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.closest('[data-id]').getAttribute('data-id');
+      const folio = btn.closest('.zx-fila').querySelector('.zx-fila-folio').textContent;
+      abrirModalDictamen(id, folio);
+    });
+  });
+  activarBotonesDetalle(contenedor);
+}
+
+function filaEquipo() {
   return `
     <div class="zx-subtabla-fila" data-fila-equipo>
       <input type="text" placeholder="Nombre" data-equipo-nombre />
@@ -162,137 +213,148 @@ function activarSubtabla(contenedorFila, selectorFilas, crearFila, botonAgregarI
   });
 }
 
-async function renderizarDictamen(contenedorId, contadorId, estado) {
-  const filas = await obtenerQuejasPorEstado(estado);
-  document.getElementById(contadorId).textContent = filas.length;
-  const contenedor = document.getElementById(contenedorId);
+function cerrarModalDictamen() {
+  document.getElementById('zx-modal-dictamen-fondo').classList.add('zx-oculto');
+}
 
-  if (filas.length === 0) {
-    contenedor.innerHTML = '<p class="zx-vacio">No hay quejas en esta bandeja.</p>';
-    return;
-  }
+const modalDictamenFondo = document.getElementById('zx-modal-dictamen-fondo');
+modalDictamenFondo.addEventListener('click', (evento) => { if (evento.target === modalDictamenFondo) cerrarModalDictamen(); });
+document.addEventListener('keydown', (evento) => {
+  if (evento.key === 'Escape' && !modalDictamenFondo.classList.contains('zx-oculto')) cerrarModalDictamen();
+});
 
-  contenedor.innerHTML = filas.map((q) => `
-    <div class="zx-fila" style="display:block;" data-id="${q.id}">
-      <div class="zx-fila" style="border:none; padding:0;">
-        ${encabezadoFila(q)}
+function abrirModalDictamen(id, folio) {
+  const modal = modalDictamenFondo.querySelector('.zx-modal');
+
+  modal.innerHTML = `
+    <div class="zx-modal-cabecera">
+      <h2>Dictamen · ${escaparHtml(folio)}</h2>
+      <button type="button" class="zx-modal-cerrar" data-cerrar>✕</button>
+    </div>
+
+    <div class="zx-dictamen-form">
+      <div class="zx-dictamen-seccion">
+        <span class="zx-etiqueta-seccion">Tipo de acción</span>
+        <div class="zx-radio-grupo">
+          <label><input type="radio" name="tipo_accion" value="correctiva" data-tipo-accion checked /> Acción correctiva</label>
+          <label><input type="radio" name="tipo_accion" value="preventiva" data-tipo-accion /> Acción preventiva</label>
+        </div>
       </div>
-      <div class="zx-dictamen-form">
-        <div class="zx-dictamen-seccion">
-          <span class="zx-etiqueta-seccion">Tipo de acción</span>
-          <div class="zx-radio-grupo">
-            <label><input type="radio" name="tipo_accion_${q.id}" value="correctiva" data-tipo-accion checked /> Acción correctiva</label>
-            <label><input type="radio" name="tipo_accion_${q.id}" value="preventiva" data-tipo-accion /> Acción preventiva</label>
-          </div>
-        </div>
 
-        <div class="zx-form-grid zx-dictamen-seccion">
-          <div class="zx-campo">
-            <label>Cantidad</label>
-            <input type="text" data-cantidad />
-          </div>
-          <div class="zx-campo">
-            <label>Desviación reportada</label>
-            <input type="text" data-desviacion />
-          </div>
+      <div class="zx-form-grid zx-dictamen-seccion">
+        <div class="zx-campo">
+          <label>Cantidad</label>
+          <input type="text" data-cantidad />
         </div>
+        <div class="zx-campo">
+          <label>Desviación reportada</label>
+          <input type="text" data-desviacion />
+        </div>
+      </div>
 
-        <div class="zx-dictamen-seccion">
-          <span class="zx-etiqueta-seccion">1. Descripción del problema <span class="req">*</span></span>
-          <textarea class="zx-textarea-inline" data-descripcion required></textarea>
-        </div>
+      <div class="zx-dictamen-seccion">
+        <span class="zx-etiqueta-seccion">1. Descripción del problema <span class="req">*</span></span>
+        <textarea class="zx-textarea-inline" data-descripcion required></textarea>
+      </div>
 
-        <div class="zx-dictamen-seccion">
-          <span class="zx-etiqueta-seccion">2. Identificación de la causa raíz</span>
-          <textarea class="zx-textarea-inline" data-causa-raiz></textarea>
-          <span class="zx-etiqueta-seccion" style="margin-top:10px;">Equipo multidisciplinario</span>
-          <div class="zx-subtabla" data-lista="equipo-${q.id}">${filaEquipo()}</div>
-          <button type="button" class="zx-btn-agregar-fila" data-agregar="equipo-${q.id}">+ Agregar integrante</button>
-        </div>
+      <div class="zx-dictamen-seccion">
+        <span class="zx-etiqueta-seccion">2. Identificación de la causa raíz</span>
+        <textarea class="zx-textarea-inline" data-causa-raiz></textarea>
+        <span class="zx-etiqueta-seccion" style="margin-top:10px;">Equipo multidisciplinario</span>
+        <div class="zx-subtabla" data-lista="equipo">${filaEquipo()}</div>
+        <button type="button" class="zx-btn-agregar-fila" data-agregar="equipo">+ Agregar integrante</button>
+      </div>
 
-        <div class="zx-dictamen-seccion">
-          <span class="zx-etiqueta-seccion">3. Medidas de contención y preventivas</span>
-          <div class="zx-subtabla" data-lista="medidas-${q.id}">${filaMedida()}</div>
-          <button type="button" class="zx-btn-agregar-fila" data-agregar="medidas-${q.id}">+ Agregar medida</button>
-        </div>
+      <div class="zx-dictamen-seccion">
+        <span class="zx-etiqueta-seccion">3. Medidas de contención y preventivas</span>
+        <div class="zx-subtabla" data-lista="medidas">${filaMedida()}</div>
+        <button type="button" class="zx-btn-agregar-fila" data-agregar="medidas">+ Agregar medida</button>
+      </div>
 
-        <div class="zx-dictamen-seccion">
-          <span class="zx-etiqueta-seccion">4. Conclusión</span>
-          <textarea class="zx-textarea-inline" data-conclusion></textarea>
-        </div>
+      <div class="zx-dictamen-seccion">
+        <span class="zx-etiqueta-seccion">4. Conclusión</span>
+        <textarea class="zx-textarea-inline" data-conclusion></textarea>
+      </div>
 
-        <div class="zx-form-grid zx-dictamen-seccion">
-          <div class="zx-campo">
-            <label>Recibido por</label>
-            <input type="text" data-recibido-por />
-          </div>
+      <div class="zx-form-grid zx-dictamen-seccion">
+        <div class="zx-campo">
+          <label>Recibido por</label>
+          <input type="text" data-recibido-por />
         </div>
+      </div>
 
-        <div class="zx-fila-acciones" style="margin-top:14px;">
-          ${botonDetalle(q.id)}
-          <button class="zx-btn zx-btn-exito zx-btn-sm" data-accion="aceptar">Aceptado</button>
-          <button class="zx-btn zx-btn-peligro zx-btn-sm" data-accion="rechazar">Rechazado</button>
-        </div>
+      <div class="zx-fila-acciones" style="margin-top:14px;">
+        <button class="zx-btn zx-btn-exito zx-btn-sm" data-accion="aceptar">Aceptado</button>
+        <button class="zx-btn zx-btn-peligro zx-btn-sm" data-accion="rechazar">Rechazado</button>
       </div>
     </div>
-  `).join('');
+  `;
 
-  contenedor.querySelectorAll('[data-id]').forEach((fila) => {
-    const id = fila.getAttribute('data-id');
-    activarSubtabla(fila, '[data-fila-equipo]', () => filaEquipo(), `equipo-${id}`);
-    activarSubtabla(fila, '[data-fila-medida]', () => filaMedida(), `medidas-${id}`);
+  modal.querySelector('[data-cerrar]').addEventListener('click', cerrarModalDictamen);
+  activarSubtabla(modal, '[data-fila-equipo]', () => filaEquipo(), 'equipo');
+  activarSubtabla(modal, '[data-fila-medida]', () => filaMedida(), 'medidas');
 
-    fila.querySelectorAll('[data-accion]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const aceptar = btn.getAttribute('data-accion') === 'aceptar';
-        const descripcion = fila.querySelector('[data-descripcion]').value.trim();
-        if (!descripcion) {
-          mostrarMensaje('La descripción del problema es obligatoria antes de continuar.', false);
-          fila.querySelector('[data-descripcion]').focus();
-          return;
-        }
-        fila.querySelectorAll('[data-accion]').forEach((b) => (b.disabled = true));
+  modal.querySelectorAll('[data-accion]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const aceptar = btn.getAttribute('data-accion') === 'aceptar';
+      const descripcion = modal.querySelector('[data-descripcion]').value.trim();
+      if (!descripcion) {
+        mostrarMensaje('La descripción del problema es obligatoria antes de continuar.', false);
+        modal.querySelector('[data-descripcion]').focus();
+        return;
+      }
 
-        const equipo = Array.from(fila.querySelectorAll('[data-fila-equipo]')).map((f) => ({
-          nombre: f.querySelector('[data-equipo-nombre]').value.trim(),
-          puesto: f.querySelector('[data-equipo-puesto]').value.trim(),
-        })).filter((e) => e.nombre);
+      const mensajeConfirmacion = aceptar
+        ? `¿Confirmas registrar este dictamen de ${folio} como ACEPTADO? La queja avanzará a espera de recolección.`
+        : `¿Confirmas registrar este dictamen de ${folio} como RECHAZADO? La queja quedará cerrada como rechazada.`;
+      if (!confirmarAccion(mensajeConfirmacion)) return;
 
-        const medidas = Array.from(fila.querySelectorAll('[data-fila-medida]')).map((f) => ({
-          medida: f.querySelector('[data-medida-texto]').value.trim(),
-          responsable: f.querySelector('[data-medida-responsable]').value.trim(),
-          fecha: f.querySelector('[data-medida-fecha]').value || null,
-        })).filter((m) => m.medida);
+      modal.querySelectorAll('[data-accion]').forEach((b) => (b.disabled = true));
 
-        const p_dictamen = {
-          tipo_accion: fila.querySelector('[data-tipo-accion]:checked').value,
-          cantidad: fila.querySelector('[data-cantidad]').value.trim(),
-          desviacion_reportada: fila.querySelector('[data-desviacion]').value.trim(),
-          descripcion_problema: descripcion,
-          identificacion_causa_raiz: fila.querySelector('[data-causa-raiz]').value.trim(),
-          conclusion: fila.querySelector('[data-conclusion]').value.trim(),
-          recibido_por: fila.querySelector('[data-recibido-por]').value.trim(),
-          equipo,
-          medidas,
-        };
+      const equipo = Array.from(modal.querySelectorAll('[data-fila-equipo]')).map((f) => ({
+        nombre: f.querySelector('[data-equipo-nombre]').value.trim(),
+        puesto: f.querySelector('[data-equipo-puesto]').value.trim(),
+      })).filter((e) => e.nombre);
 
-        const ok = await llamarRpc(
-          'queja_dictamen',
-          { p_id: id, p_dictamen, p_aceptar: aceptar },
-          aceptar ? 'Dictamen registrado como aceptado.' : 'Dictamen registrado como rechazado.'
-        );
-        if (!ok) fila.querySelectorAll('[data-accion]').forEach((b) => (b.disabled = false));
-      });
+      const medidas = Array.from(modal.querySelectorAll('[data-fila-medida]')).map((f) => ({
+        medida: f.querySelector('[data-medida-texto]').value.trim(),
+        responsable: f.querySelector('[data-medida-responsable]').value.trim(),
+        fecha: f.querySelector('[data-medida-fecha]').value || null,
+      })).filter((m) => m.medida);
+
+      const p_dictamen = {
+        tipo_accion: modal.querySelector('[data-tipo-accion]:checked').value,
+        cantidad: modal.querySelector('[data-cantidad]').value.trim(),
+        desviacion_reportada: modal.querySelector('[data-desviacion]').value.trim(),
+        descripcion_problema: descripcion,
+        identificacion_causa_raiz: modal.querySelector('[data-causa-raiz]').value.trim(),
+        conclusion: modal.querySelector('[data-conclusion]').value.trim(),
+        recibido_por: modal.querySelector('[data-recibido-por]').value.trim(),
+        equipo,
+        medidas,
+      };
+
+      const ok = await llamarRpc(
+        'queja_dictamen',
+        { p_id: id, p_dictamen, p_aceptar: aceptar },
+        aceptar ? 'Dictamen registrado como aceptado.' : 'Dictamen registrado como rechazado.'
+      );
+      if (ok) {
+        cerrarModalDictamen();
+      } else {
+        modal.querySelectorAll('[data-accion]').forEach((b) => (b.disabled = false));
+      }
     });
   });
-  activarBotonesDetalle(contenedor);
+
+  modalDictamenFondo.classList.remove('zx-oculto');
 }
 
 async function cargarTodo() {
   await renderizarSimple('lista-muestra', 'c-muestra', 'esperando_muestra', `
     <button class="zx-btn zx-btn-secundario zx-btn-sm" data-accion="muestra_recibida">Muestra recibida</button>
   `);
-  await renderizarDictamen('lista-dictamen', 'c-dictamen', 'dictamen_pendiente');
+  await renderizarDictamenLista('lista-dictamen', 'c-dictamen', 'dictamen_pendiente');
   await renderizarSimple('lista-planta', 'c-planta', 'enviado_planta', `
     <button class="zx-btn zx-btn-secundario zx-btn-sm" data-accion="material_recibido">Material recibido</button>
   `);
