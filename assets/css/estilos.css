@@ -337,8 +337,16 @@ a { color: var(--zx-secundario); }
 .zx-oculto { display: none !important; }
 
 /* ---------- Login ---------- */
-.zx-login-envoltura {
+/* La página de login usa un layout de columna a pantalla completa (body.zx-pagina-login)
+   para que la tarjeta se centre en el espacio disponible y el pie de página (versión)
+   quede pegado abajo sin generar una barra de scroll extra. */
+body.zx-pagina-login {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
+}
+.zx-login-envoltura {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -353,16 +361,22 @@ a { color: var(--zx-secundario); }
   box-shadow: 0 10px 30px rgba(13, 24, 168, 0.12);
   border: 1px solid var(--zx-borde);
 }
+.zx-login-marca {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 22px;
+}
 .zx-login-logo {
   display: block;
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
   object-fit: cover;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
-.zx-login-tarjeta h1 { font-size: 1.2rem; margin: 0 0 4px; color: var(--zx-texto); }
-.zx-login-tarjeta p.sub { margin: 0 0 22px; color: var(--zx-texto-suave); font-size: 0.88rem; }
+.zx-login-marca h1 { font-size: 1.2rem; margin: 0; color: var(--zx-texto); }
 .zx-login-tarjeta .zx-btn { width: 100%; margin-top: 6px; }
 
 .zx-selector-pantalla { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
@@ -487,3 +501,15 @@ footer.zx-pie {
 .zx-linea-tiempo-texto span.zx-lt-meta { color: var(--zx-texto-suave); font-size: 0.78rem; }
 .zx-btn-detalle { background: transparent; border: 1px solid var(--zx-borde); color: var(--zx-texto-suave); }
 .zx-btn-detalle:hover { border-color: var(--zx-secundario); color: var(--zx-secundario); }
+
+.zx-lista-adjuntos { display: flex; flex-direction: column; gap: 8px; }
+.zx-fila-adjunto {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.85rem;
+  padding: 8px 10px;
+  border: 1px solid var(--zx-borde);
+  border-radius: 8px;
+}

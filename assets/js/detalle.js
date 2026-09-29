@@ -29,6 +29,13 @@ function dato(etiqueta, valor) {
   return `<div class="zx-detalle-dato"><span>${escaparHtml(etiqueta)}</span>${escaparHtml(valor || '—')}</div>`;
 }
 
+function formatoTamano(bytes) {
+  if (!bytes && bytes !== 0) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 function cerrarModal() {
   const fondo = document.getElementById('zx-detalle-fondo');
   if (fondo) fondo.remove();
@@ -52,14 +59,15 @@ export async function abrirDetalleQueja(id) {
   fondo.addEventListener('click', (evento) => { if (evento.target === fondo) cerrarModal(); });
   document.addEventListener('keydown', escListener);
 
-  const [{ data: q, error: errQ }, { data: tempos }, { data: dictamenes }, { data: recolecciones }] = await Promise.all([
+  const [{ data: q, error: errQ }, { data: tempos }, { data: dictamenes }, { data: recolecciones }, { data: adjuntos }] = await Promise.all([
     supabase.from('quejas')
       .select('*, catalogo_estados(etiqueta), catalogo_tipos_queja(etiqueta), profiles!quejas_creada_por_fkey(nombre_completo)')
       .eq('id', id)
       .single(),
     supabase.from('tempos').select('*').eq('queja_id', id).order('creado_en', { ascending: true }),
     supabase.from('dictamenes').select('*').eq('queja_id', id).maybeSingle(),
-    supabase.from('recolecciones').select('folio, generado_en, enviado_en').eq('queja_id', id).maybeSingle(),
+    supabase.from('recolecciones').select('folio, generado_en, enviado_en, cantidad, lote_rechazo').eq('queja_id', id).maybeSingle(),
+    supabase.from('queja_adjuntos').select('id, nombre_archivo, ruta_storage, tipo_mime, tamanio_bytes').eq('queja_id', id).order('subido_en', { ascending: true }),
   ]);
 
   if (errQ || !q) {
@@ -110,11 +118,25 @@ export async function abrirDetalleQueja(id) {
       ${dictamenes.conclusion ? `<p><strong>Conclusión:</strong> ${escaparHtml(dictamenes.conclusion)}</p>` : ''}
     </div>` : '';
 
+  const bloqueAdjuntos = (adjuntos && adjuntos.length > 0) ? `
+    <div class="zx-detalle-seccion">
+      <h3>Adjuntos <span class="zx-contador">${adjuntos.length}</span></h3>
+      <div class="zx-lista-adjuntos">
+        ${adjuntos.map((a) => `
+          <div class="zx-fila-adjunto">
+            <span>${escaparHtml(a.nombre_archivo)}${a.tamanio_bytes ? ` <span class="zx-lt-meta">(${formatoTamano(a.tamanio_bytes)})</span>` : ''}</span>
+            <button type="button" class="zx-btn zx-btn-secundario zx-btn-sm" data-descargar-adjunto="${escaparHtml(a.ruta_storage)}">Descargar</button>
+          </div>`).join('')}
+      </div>
+    </div>` : '';
+
   const bloqueRecoleccion = recolecciones ? `
     <div class="zx-detalle-seccion">
       <h3>Recolección</h3>
       <div class="zx-detalle-grid">
         ${dato('Folio', recolecciones.folio)}
+        ${recolecciones.cantidad !== null && recolecciones.cantidad !== undefined ? dato('Cantidad', recolecciones.cantidad) : ''}
+        ${recolecciones.lote_rechazo ? dato('Lote de rechazo', recolecciones.lote_rechazo) : ''}
         ${esAdmin() ? dato('Generado', formatoFecha(recolecciones.generado_en)) : ''}
         ${esAdmin() ? dato('Enviado', recolecciones.enviado_en ? formatoFecha(recolecciones.enviado_en) : 'Pendiente') : ''}
       </div>
@@ -153,6 +175,7 @@ export async function abrirDetalleQueja(id) {
 
     ${bloqueDictamen}
     ${bloqueRecoleccion}
+    ${bloqueAdjuntos}
 
     <div class="zx-detalle-seccion">
       <h3>Línea de tiempo</h3>
@@ -160,6 +183,22 @@ export async function abrirDetalleQueja(id) {
     </div>
   `;
   fondo.querySelector('[data-cerrar]').addEventListener('click', cerrarModal);
+  fondo.querySelectorAll('[data-descargar-adjunto]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const ruta = btn.getAttribute('data-descargar-adjunto');
+      btn.disabled = true;
+      const textoOriginal = btn.textContent;
+      btn.textContent = 'Abriendo…';
+      const { data, error } = await supabase.storage.from('adjuntos-quejas').createSignedUrl(ruta, 60);
+      btn.disabled = false;
+      btn.textContent = textoOriginal;
+      if (error || !data?.signedUrl) {
+        window.alert('No se pudo abrir el archivo: ' + (error?.message || 'error desconocido'));
+        return;
+      }
+      window.open(data.signedUrl, '_blank', 'noopener');
+    });
+  });
 }
 
 /** Genera el botón "Ver detalles" ya con su atributo data-id, listo para insertarse en cualquier fila. */

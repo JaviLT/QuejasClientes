@@ -99,6 +99,15 @@ function pintarLista(contenedorId, contadorId, quejas, textoVacio) {
       const folio = fila.querySelector('.zx-fila-folio').textContent;
       if (!confirm(`¿Eliminar definitivamente ${folio}? Esta acción no se puede deshacer.`)) return;
       btn.disabled = true;
+
+      // Antes de borrar la queja, borra sus archivos adjuntos del bucket de Storage — si no,
+      // el borrado en cascada solo quita el renglón de queja_adjuntos y el archivo se queda
+      // huérfano ocupando espacio de Storage para siempre.
+      const { data: adjuntos } = await supabase.from('queja_adjuntos').select('ruta_storage').eq('queja_id', id);
+      if (adjuntos && adjuntos.length > 0) {
+        await supabase.storage.from('adjuntos-quejas').remove(adjuntos.map((a) => a.ruta_storage));
+      }
+
       const { error: errBorrar } = await supabase.rpc('queja_eliminar', { p_id: id });
       if (errBorrar) {
         mostrarMensaje('No se pudo eliminar: ' + errBorrar.message, false);

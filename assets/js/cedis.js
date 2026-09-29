@@ -81,21 +81,90 @@ async function cargarEspera() {
   activarBotonesDetalle(contenedor);
 
   contenedor.querySelectorAll('[data-accion="material-recibido"]').forEach((btn) => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', () => {
       const folio = btn.closest('.zx-fila').querySelector('.zx-fila-folio').textContent;
-      if (!confirmarAccion(`¿Confirmas que el material de ${folio} ya llegó y quieres generar su folio de recolección?`)) return;
-      btn.disabled = true;
       const id = btn.getAttribute('data-id');
-      const { data: idFolio, error } = await supabase.rpc('recoleccion_material_recibido', { p_queja_id: id });
-      if (error) {
-        mostrarMensaje('No se pudo generar el folio: ' + error.message, false);
-        btn.disabled = false;
-        return;
-      }
-      const { data: fila } = await supabase.from('recolecciones').select('folio').eq('id', idFolio).single();
-      mostrarMensaje(`Folio de recolección generado: ${fila?.folio || idFolio}.`, true);
-      await cargarTodo();
+      abrirModalMaterialRecibido(id, folio);
     });
+  });
+}
+
+// ---------- Popup "Material recibido": pide cantidad y lote de rechazo antes de generar el folio ----------
+function abrirModalMaterialRecibido(id, folio) {
+  const previo = document.getElementById('zx-modal-material-fondo');
+  if (previo) previo.remove();
+
+  const fondo = document.createElement('div');
+  fondo.id = 'zx-modal-material-fondo';
+  fondo.className = 'zx-modal-fondo';
+  fondo.innerHTML = `
+    <div class="zx-modal">
+      <div class="zx-modal-cabecera">
+        <h2>Material recibido · ${escaparHtml(folio)}</h2>
+        <button type="button" class="zx-modal-cerrar" data-cerrar>✕</button>
+      </div>
+      <p class="zx-fila-meta" style="margin-top:-4px;">Captura estos datos antes de generar el folio de recolección.</p>
+      <div class="zx-form-grid">
+        <div class="zx-campo">
+          <label>Cantidad</label>
+          <input type="number" step="any" min="0" data-cantidad required />
+        </div>
+        <div class="zx-campo">
+          <label>Lote de rechazo</label>
+          <input type="text" data-lote-rechazo />
+        </div>
+      </div>
+      <div class="zx-fila-acciones" style="margin-top:14px;">
+        <button type="button" class="zx-btn zx-btn-secundario zx-btn-sm" data-cerrar>Cancelar</button>
+        <button type="button" class="zx-btn zx-btn-exito zx-btn-sm" data-confirmar>Generar folio</button>
+      </div>
+    </div>`;
+  document.body.appendChild(fondo);
+
+  function cerrar() {
+    fondo.remove();
+    document.removeEventListener('keydown', escListener);
+  }
+  function escListener(evento) {
+    if (evento.key === 'Escape') cerrar();
+  }
+  fondo.addEventListener('click', (evento) => { if (evento.target === fondo) cerrar(); });
+  document.addEventListener('keydown', escListener);
+  fondo.querySelectorAll('[data-cerrar]').forEach((btn) => btn.addEventListener('click', cerrar));
+
+  fondo.querySelector('[data-confirmar]').addEventListener('click', async () => {
+    const cantidadTexto = fondo.querySelector('[data-cantidad]').value.trim();
+    const loteRechazo = fondo.querySelector('[data-lote-rechazo]').value.trim();
+
+    if (!cantidadTexto) {
+      mostrarMensaje('Captura la cantidad antes de continuar.', false);
+      fondo.querySelector('[data-cantidad]').focus();
+      return;
+    }
+    const cantidad = Number(cantidadTexto);
+    if (Number.isNaN(cantidad) || cantidad < 0) {
+      mostrarMensaje('La cantidad debe ser un número válido.', false);
+      fondo.querySelector('[data-cantidad]').focus();
+      return;
+    }
+    if (!confirmarAccion(`¿Confirmas que el material de ${folio} ya llegó y quieres generar su folio de recolección?`)) return;
+
+    const btnConfirmar = fondo.querySelector('[data-confirmar]');
+    btnConfirmar.disabled = true;
+    const { data: idFolio, error } = await supabase.rpc('recoleccion_material_recibido', {
+      p_queja_id: id,
+      p_cantidad: cantidad,
+      p_lote_rechazo: loteRechazo || null,
+    });
+    if (error) {
+      mostrarMensaje('No se pudo generar el folio: ' + error.message, false);
+      btnConfirmar.disabled = false;
+      return;
+    }
+    cerrar();
+    const { data: fila } = await supabase.from('recolecciones').select('folio').eq('id', idFolio).single();
+    mostrarMensaje(`Folio de recolección generado: ${fila?.folio || idFolio}.`, true);
+    await cargarTodo();
   });
 }
 

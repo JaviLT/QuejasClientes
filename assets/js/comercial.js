@@ -2,6 +2,11 @@ import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml } from './auth-guard.js';
 import { botonDetalle, activarBotonesDetalle, establecerRolActual } from './detalle.js';
 
+// Los adjuntos se guardan en Supabase Storage (bucket "adjuntos-quejas"), no en la base de
+// datos — en la tabla queja_adjuntos solo queda una referencia chiquita (nombre + ruta).
+// Este límite por archivo cuida el 1 GB gratis del plan de Storage.
+const MAX_ADJUNTO_BYTES = 15 * 1024 * 1024; // 15 MB
+
 const sesion = await exigirSesion(['comercial']);
 if (sesion) {
   establecerRolActual(sesion.perfil.rol);
@@ -32,6 +37,17 @@ if (sesion) {
     evento.preventDefault();
     modalMensaje.classList.add('zx-oculto');
 
+    // Antes de tocar la base, valida que ningún adjunto pase del límite por archivo.
+    const inputAdjuntos = document.getElementById('adjuntos');
+    const archivos = Array.from(inputAdjuntos.files || []);
+    const archivosGrandes = archivos.filter((f) => f.size > MAX_ADJUNTO_BYTES);
+    if (archivosGrandes.length > 0) {
+      modalMensaje.textContent = `${archivosGrandes.map((f) => f.name).join(', ')}: cada archivo debe pesar 15 MB o menos.`;
+      modalMensaje.className = 'zx-mensaje zx-mensaje-error';
+      modalMensaje.classList.remove('zx-oculto');
+      return;
+    }
+
     // Registrar una queja nueva es una captura, no un cambio de proceso sobre una queja
     // existente, así que aquí no pedimos doble check (a diferencia de aceptar/rechazar/etc.).
     const btn = document.getElementById('zx-btn-guardar');
@@ -59,25 +75,64 @@ if (sesion) {
     // Nota: estado, creada_por, tempo_activo_desde y tempo_label_activo los fija
     // el servidor (trigger trg_inicializar_queja) — el cliente nunca los manda.
 
-    const { data, error } = await supabase.from('quejas').insert(nuevaQueja).select('folio').single();
-
-    btn.disabled = false;
-    btn.textContent = 'Registrar queja';
+    const { data, error } = await supabase.from('quejas').insert(nuevaQueja).select('id, folio').single();
 
     if (error) {
+      btn.disabled = false;
+      btn.textContent = 'Registrar queja';
       console.error(error);
       modalMensaje.textContent = 'No se pudo registrar la queja: ' + error.message;
       modalMensaje.className = 'zx-mensaje zx-mensaje-error';
       return;
     }
 
+    let avisoAdjuntos = '';
+    if (archivos.length > 0) {
+      btn.textContent = `Subiendo ${archivos.length} archivo(s)…`;
+      const fallos = await subirAdjuntos(data.id, archivos);
+      if (fallos.length > 0) {
+        avisoAdjuntos = ` No se pudieron subir estos archivos: ${fallos.join(', ')}.`;
+      }
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Registrar queja';
+
     const mensaje = document.getElementById('zx-mensaje');
-    mensaje.textContent = `Queja registrada con folio ${data.folio}.`;
-    mensaje.className = 'zx-mensaje zx-mensaje-ok';
+    mensaje.textContent = `Queja registrada con folio ${data.folio}.${avisoAdjuntos}`;
+    mensaje.className = 'zx-mensaje ' + (avisoAdjuntos ? 'zx-mensaje-error' : 'zx-mensaje-ok');
     document.getElementById('zx-form-queja').reset();
     cerrarModalNueva();
     await cargarMisQuejas();
   });
+}
+
+/** Sube cada archivo a Storage (bucket adjuntos-quejas) y registra su referencia en queja_adjuntos.
+ * Devuelve la lista de nombres de archivo que no se pudieron subir (si alguno falla). */
+async function subirAdjuntos(quejaId, archivos) {
+  const fallos = [];
+  for (const archivo of archivos) {
+    const nombreSaneado = archivo.name.replace(/[^\w.\-]+/g, '_');
+    const ruta = `${quejaId}/${Date.now()}-${nombreSaneado}`;
+    const { error: errorSubida } = await supabase.storage.from('adjuntos-quejas').upload(ruta, archivo);
+    if (errorSubida) {
+      console.error(errorSubida);
+      fallos.push(archivo.name);
+      continue;
+    }
+    const { error: errorFila } = await supabase.from('queja_adjuntos').insert({
+      queja_id: quejaId,
+      nombre_archivo: archivo.name,
+      ruta_storage: ruta,
+      tipo_mime: archivo.type || null,
+      tamanio_bytes: archivo.size,
+    });
+    if (errorFila) {
+      console.error(errorFila);
+      fallos.push(archivo.name);
+    }
+  }
+  return fallos;
 }
 
 async function cargarCatalogoTiposQueja() {

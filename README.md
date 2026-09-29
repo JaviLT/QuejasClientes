@@ -5,10 +5,11 @@ Front real (HTML/CSS/JS estático) conectado a Supabase, para registrar y dar se
 ## Estructura
 
 ```
-index.html              Login (usuario + contraseña — sin formato de correo, ver abajo)
-comercial.html           Mis quejas + botón "Nueva queja" (en la barra superior, abre un modal)
+index.html              Redirige a login.html (se deja por si algo apunta a la raíz del sitio)
+login.html              Login (usuario + contraseña — sin formato de correo, ver abajo)
+comercial.html           Mis quejas + botón "Nueva queja" (en la barra superior, abre un modal con adjuntos)
 calidad.html             Bandejas de Calidad (esperando muestra, dictamen, revisión…)
-cedis.html               Bandejas de CEDIS (espera de recolección, envío a planta, notas de crédito) + botón "Folio sin queja" (en la barra superior)
+cedis.html               Bandejas de CEDIS (espera de recolección con popup "Material recibido", envío a planta, notas de crédito) + botón "Folio sin queja" (en la barra superior)
 admin.html               Solo Admin: quejas separadas en "Abiertas" y "Cerradas", con Ver detalles, Eliminar y tiempos por etapa desplegables
 tiempos.html             Redirige a admin.html (nombre anterior de esa pantalla; se deja por si hay enlaces viejos)
 usuarios.html            Solo Admin: crear usuarios nuevos + lista de usuarios existentes
@@ -19,7 +20,7 @@ assets/js/
   version.js             Número de versión visible de la app (ver "Versión de la app" abajo)
   auth-guard.js          Exige sesión + rol correcto en cada pantalla, pinta el encabezado (ícono, pestañas/botón de acción, botón de usuario con menú de modo noche y cerrar sesión, y la versión en el pie), y centraliza el doble check (`confirmarAccion`)
   tiempo.js               Duración fija y legible de cada etapa (minutos/horas/días/semanas/meses/años) — nunca un reloj en vivo, y solo la usa `admin.js`
-  detalle.js              Modal compartido "Ver detalles" de una queja (datos + línea de tiempo + dictamen) — la línea de tiempo y otras fechas de proceso solo se muestran completas si quien mira la pantalla es Admin (ver "Tiempos: solo para Admin")
+  detalle.js              Modal compartido "Ver detalles" de una queja (datos + línea de tiempo + dictamen + adjuntos) — la línea de tiempo y otras fechas de proceso solo se muestran completas si quien mira la pantalla es Admin (ver "Tiempos: solo para Admin")
   login.js, comercial.js, calidad.js, cedis.js, admin.js, usuarios.js   Lógica de cada pantalla
 supabase/migrations/     Esquema completo de la base de datos (SQL)
 supabase/functions/admin-crear-usuario/   Edge Function para crear usuarios (usa la service_role key del lado del servidor)
@@ -48,6 +49,8 @@ Hoy existen 4 cuentas compartidas (Comercial/Calidad/CEDIS/Admin); en el futuro 
 
 Supabase Auth siempre necesita internamente un identificador con forma de correo, pero la persona que inicia sesión solo escribe una palabra (`COMERCIAL`, `CALIDAD`, `CEDIS`, `ADMIN`). `assets/js/login.js` construye el correo interno (`usuario.toLowerCase() + '@zx-procesos.local'`) antes de llamar a `signInWithPassword` — si más adelante se pasa a cuentas por empleado con correos reales, basta con cambiar esa función.
 
+El archivo con el formulario es `login.html` (antes era `index.html`); el logo y "Quejas de Clientes" van centrados arriba de la tarjeta, sin subtítulo, el campo de usuario tiene `autocomplete="off"` para no ofrecer sugerencias del navegador, y la página usa un layout de columna a pantalla completa para que el pie de página con la versión no genere scroll de más.
+
 ## Cómo se mueve el flujo
 
 Todas las transiciones de estatus de una queja pasan por funciones RPC en la base de datos (`queja_aceptar`, `queja_dictamen`, `recoleccion_enviar`, etc.), nunca por `update` directo desde el cliente. Cada función valida el rol de quien llama y el estatus actual antes de cambiar cualquier cosa. El detalle completo del flujo y de cada función está documentado en el proyecto de Claude de Zubex (documento `BASE-DE-DATOS.md`).
@@ -66,7 +69,7 @@ Cada pantalla comparte el mismo encabezado, pintado por `pintarEncabezado()` en 
 
 ## Ver detalles
 
-Cada queja tiene un botón "Ver detalles" que abre un modal de solo lectura con todos sus datos, el dictamen si existe y una línea de tiempo de sus etapas. Esa línea de tiempo (compartida por todas las pantallas) siempre muestra la etiqueta de cada etapa ya cerrada; la fecha/hora junto a cada una, y las demás fechas de proceso del modal (fecha de emisión del dictamen, fecha de generado/enviado de la recolección), solo se pintan si quien mira la pantalla es Admin — para el resto de los roles esas fechas se ocultan por completo (ver "Tiempos: solo para Admin"). La única fecha que ven todos los roles, sin excepción, es la "Fecha de registro" de la queja (cuándo se creó), que aparece en los datos generales del modal.
+Cada queja tiene un botón "Ver detalles" que abre un modal de solo lectura con todos sus datos, el dictamen si existe, sus adjuntos si tiene (con botón "Descargar") y una línea de tiempo de sus etapas. Esa línea de tiempo (compartida por todas las pantallas) siempre muestra la etiqueta de cada etapa ya cerrada; la fecha/hora junto a cada una, y las demás fechas de proceso del modal (fecha de emisión del dictamen, fecha de generado/enviado de la recolección), solo se pintan si quien mira la pantalla es Admin — para el resto de los roles esas fechas se ocultan por completo (ver "Tiempos: solo para Admin"). La única fecha que ven todos los roles, sin excepción, es la "Fecha de registro" de la queja (cuándo se creó), que aparece en los datos generales del modal.
 
 ## Tiempos: solo para Admin
 
@@ -85,7 +88,7 @@ Desde el 28 de septiembre de 2026 una queja nueva ya no pasa por el estatus `nue
 
 ## Versión de la app
 
-`assets/js/version.js` exporta `APP_VERSION`, un número de versión visible que se pinta en el pie de página de cada pantalla (incluyendo el login) vía `pintarPie()` en `auth-guard.js`. Sirve para que cualquiera — sobre todo Admin — pueda confirmar de un vistazo que ya tiene la versión más reciente desplegada. **Convención:** cada ronda de cambios que se entregue debe subir este número (minor para pantallas/funciones nuevas o cambiadas, patch para una corrección chica). Actual: `1.1.0`.
+`assets/js/version.js` exporta `APP_VERSION`, un número de versión visible que se pinta en el pie de página de cada pantalla (incluyendo el login) vía `pintarPie()` en `auth-guard.js`. Sirve para que cualquiera — sobre todo Admin — pueda confirmar de un vistazo que ya tiene la versión más reciente desplegada. **Convención:** cada ronda de cambios que se entregue debe subir este número (minor para pantallas/funciones nuevas o cambiadas, patch para una corrección chica). Actual: `1.2.0`.
 
 ## Ícono de la marca
 
@@ -98,6 +101,14 @@ El botón principal de cada pantalla (Comercial: "Nueva queja"; CEDIS: "Folio si
 ## Dictamen de Calidad: pop up
 
 La bandeja "Dictamen en proceso" de Calidad ya no muestra el formulario VEN-F-08 completo por cada queja: cada fila solo tiene "Ver detalles" y un botón "Iniciar dictamen". Al darle clic se abre un pop up (`#zx-modal-dictamen-fondo` en `calidad.html`, construido por `abrirModalDictamen` en `calidad.js`) con el formulario completo; Aceptado/Rechazado sigue llamando al mismo RPC `queja_dictamen`.
+
+## Adjuntos en Comercial
+
+El modal "Nueva queja" tiene un campo de archivos (`<input type="file" multiple>`) para adjuntar PDFs, fotos, video o cualquier tipo de archivo. Los archivos se suben a un bucket privado de Supabase Storage (`adjuntos-quejas`, `file_size_limit` de 15 MB por archivo) y en Postgres solo se guarda una referencia por archivo en la tabla `queja_adjuntos` (nombre, ruta, tipo, tamaño) — así los adjuntos no tocan el cupo de la base de datos, que es un cupo aparte del de Storage en el plan free de Supabase. Se ven y se descargan desde "Ver detalles" (con una URL firmada de 60 segundos, porque el bucket es privado), para cualquier rol, no solo Admin. Al eliminar una queja desde `admin.html`, el front borra primero sus archivos del bucket antes de llamar al RPC `queja_eliminar`, para no dejar archivos huérfanos ocupando espacio.
+
+## CEDIS: popup de "Material recibido"
+
+Al marcar "Material recibido" en la bandeja de espera de recolección se abre un popup que pide **Cantidad** (obligatoria) y **Lote de rechazo** (opcional) antes de generar el folio — ambos se guardan en `recolecciones.cantidad`/`recolecciones.lote_rechazo` vía el RPC `recoleccion_material_recibido(p_queja_id, p_cantidad, p_lote_rechazo)`, y se muestran en "Ver detalles" para todos los roles (son contenido del folio, no un indicador de tiempos).
 
 ## Doble check antes de cambiar el proceso de una queja
 

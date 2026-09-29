@@ -11,7 +11,7 @@ import { APP_VERSION } from './version.js';
 export async function exigirSesion(rolesPermitidos = null) {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
-    location.replace('index.html');
+    location.replace('login.html');
     return null;
   }
 
@@ -23,7 +23,7 @@ export async function exigirSesion(rolesPermitidos = null) {
 
   if (error || !perfil || perfil.activo === false) {
     await supabase.auth.signOut();
-    location.replace('index.html');
+    location.replace('login.html');
     return null;
   }
 
@@ -42,7 +42,7 @@ export async function exigirSesion(rolesPermitidos = null) {
 
 export async function cerrarSesion() {
   await supabase.auth.signOut();
-  location.replace('index.html');
+  location.replace('login.html');
 }
 
 function mostrarBloqueo(mensaje) {
