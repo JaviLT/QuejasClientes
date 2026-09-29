@@ -1,11 +1,12 @@
 import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml } from './auth-guard.js';
-import { botonDetalle, activarBotonesDetalle } from './detalle.js';
+import { botonDetalle, activarBotonesDetalle, establecerRolActual } from './detalle.js';
 
 const sesion = await exigirSesion(['comercial']);
 if (sesion) {
+  establecerRolActual(sesion.perfil.rol);
   pintarEncabezado(sesion.perfil, 'Comercial', {
-    boton: { id: 'zx-btn-abrir-nueva', texto: '+ Nueva queja' },
+    boton: { id: 'zx-btn-abrir-nueva', texto: 'Nueva queja', icono: '+' },
   });
   await cargarCatalogoTiposQueja();
   await cargarMisQuejas();

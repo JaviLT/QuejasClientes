@@ -1,13 +1,15 @@
 import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml, confirmarAccion } from './auth-guard.js';
-import { botonDetalle, activarBotonesDetalle } from './detalle.js';
+import { botonDetalle, activarBotonesDetalle, establecerRolActual } from './detalle.js';
 
 const sesion = await exigirSesion(['cedis']);
 if (sesion) {
+  establecerRolActual(sesion.perfil.rol);
   pintarEncabezado(sesion.perfil, 'CEDIS', {
     boton: {
       id: 'btn-sin-queja',
-      texto: 'Generar folio sin queja',
+      texto: 'Folio sin queja',
+      icono: '📦',
       titulo: 'Genera un folio de recolección cuando llega material sin que haya una queja registrada.',
     },
   });

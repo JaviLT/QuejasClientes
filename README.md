@@ -1,24 +1,26 @@
 # Quejas de Clientes — Zubex
 
-Front real (HTML/CSS/JS estático) conectado a Supabase, para registrar y dar seguimiento a quejas de cliente (formato VEN-F-03) por las áreas de Comercial, Calidad y CEDIS, más una pantalla de Tiempos para Admin.
+Front real (HTML/CSS/JS estático) conectado a Supabase, para registrar y dar seguimiento a quejas de cliente (formato VEN-F-03) por las áreas de Comercial, Calidad y CEDIS, más una pantalla de Administrador.
 
 ## Estructura
 
 ```
 index.html              Login (usuario + contraseña — sin formato de correo, ver abajo)
-comercial.html           Mis quejas + botón "+ Nueva queja" (en la barra superior, abre un modal)
+comercial.html           Mis quejas + botón "Nueva queja" (en la barra superior, abre un modal)
 calidad.html             Bandejas de Calidad (esperando muestra, dictamen, revisión…)
-cedis.html               Bandejas de CEDIS (espera de recolección, envío a planta, notas de crédito) + botón "Generar folio sin queja" (en la barra superior)
-tiempos.html             Solo Admin: todas las quejas (cualquier estatus) con Ver detalles, Eliminar y tiempos por etapa desplegables
+cedis.html               Bandejas de CEDIS (espera de recolección, envío a planta, notas de crédito) + botón "Folio sin queja" (en la barra superior)
+admin.html               Solo Admin: quejas separadas en "Abiertas" y "Cerradas", con Ver detalles, Eliminar y tiempos por etapa desplegables
+tiempos.html             Redirige a admin.html (nombre anterior de esa pantalla; se deja por si hay enlaces viejos)
 usuarios.html            Solo Admin: crear usuarios nuevos + lista de usuarios existentes
+assets/img/logo-zx.png   Ícono de la marca (usado en el encabezado de cada pantalla y en el login)
 assets/css/estilos.css   Estilos compartidos (paleta de marca Zubex)
 assets/js/
   supabase-client.js     Inicializa el cliente de Supabase (URL + publishable key)
   version.js             Número de versión visible de la app (ver "Versión de la app" abajo)
-  auth-guard.js          Exige sesión + rol correcto en cada pantalla, pinta el encabezado (modo noche, menú de admin, botón de acción de la pantalla y la versión en el pie), y centraliza el doble check (`confirmarAccion`)
-  tiempo.js               Duración fija y legible de cada etapa (minutos/horas/días/semanas/meses/años) — nunca un reloj en vivo, y solo la usa la pantalla de Admin
-  detalle.js              Modal compartido "Ver detalles" de una queja (datos + línea de tiempo + dictamen) — la línea de tiempo solo muestra la fecha en que se cerró cada etapa, sin duración
-  login.js, comercial.js, calidad.js, cedis.js, tiempos.js, usuarios.js   Lógica de cada pantalla
+  auth-guard.js          Exige sesión + rol correcto en cada pantalla, pinta el encabezado (ícono, pestañas/botón de acción, botón de usuario con menú de modo noche y cerrar sesión, y la versión en el pie), y centraliza el doble check (`confirmarAccion`)
+  tiempo.js               Duración fija y legible de cada etapa (minutos/horas/días/semanas/meses/años) — nunca un reloj en vivo, y solo la usa `admin.js`
+  detalle.js              Modal compartido "Ver detalles" de una queja (datos + línea de tiempo + dictamen) — la línea de tiempo y otras fechas de proceso solo se muestran completas si quien mira la pantalla es Admin (ver "Tiempos: solo para Admin")
+  login.js, comercial.js, calidad.js, cedis.js, admin.js, usuarios.js   Lógica de cada pantalla
 supabase/migrations/     Esquema completo de la base de datos (SQL)
 supabase/functions/admin-crear-usuario/   Edge Function para crear usuarios (usa la service_role key del lado del servidor)
 ```
@@ -54,30 +56,44 @@ Todas las transiciones de estatus de una queja pasan por funciones RPC en la bas
 
 El dictamen ya no es un texto libre: Calidad llena un formulario con los campos del formato oficial VEN-F-08 (tipo de acción, cantidad, desviación reportada, descripción del problema, causa raíz, equipo multidisciplinario, medidas de contención y preventivas, conclusión, recibido por). Se guarda estructurado en `dictamenes`/`dictamen_equipo`/`dictamen_medidas` (`supabase/migrations/20260928171133_dictamen_estructurado.sql`) vía el RPC `queja_dictamen(p_id, p_dictamen jsonb, p_aceptar)`.
 
-## Modo noche y ver detalles
+## El encabezado
 
-Cada pantalla tiene un botón para alternar modo claro/oscuro (se guarda en `localStorage` del navegador) y un botón "Ver detalles" en cada queja que abre un modal de solo lectura con todos sus datos, el dictamen si existe y la línea de tiempo de sus etapas. Esa línea de tiempo (compartida por las cuatro pantallas) solo muestra, por cada etapa ya cerrada, su etiqueta y la fecha/hora en que terminó — ningún dato de duración ni de hora de inicio, porque los tiempos son información exclusiva de Admin (ver siguiente sección).
+Cada pantalla comparte el mismo encabezado, pintado por `pintarEncabezado()` en `auth-guard.js`:
+
+- A la izquierda, el ícono de la marca (`assets/img/logo-zx.png`) y el nombre de la pantalla.
+- En medio, según la pantalla: las pestañas de Admin ("Administrador" / "Usuarios"), o el botón de acción propio de esa pantalla (Comercial: "Nueva queja"; CEDIS: "Folio sin queja"). Calidad no tiene nada ahí.
+- A la derecha, un botón con el nombre de la persona y su rol/departamento debajo; al darle clic se abre un menú con "Modo noche/día" y "Cerrar sesión" (antes eran botones sueltos en la barra).
+
+## Ver detalles
+
+Cada queja tiene un botón "Ver detalles" que abre un modal de solo lectura con todos sus datos, el dictamen si existe y una línea de tiempo de sus etapas. Esa línea de tiempo (compartida por todas las pantallas) siempre muestra la etiqueta de cada etapa ya cerrada; la fecha/hora junto a cada una, y las demás fechas de proceso del modal (fecha de emisión del dictamen, fecha de generado/enviado de la recolección), solo se pintan si quien mira la pantalla es Admin — para el resto de los roles esas fechas se ocultan por completo (ver "Tiempos: solo para Admin"). La única fecha que ven todos los roles, sin excepción, es la "Fecha de registro" de la queja (cuándo se creó), que aparece en los datos generales del modal.
 
 ## Tiempos: solo para Admin
 
-Ninguna pantalla de Comercial, Calidad o CEDIS muestra duraciones, cronómetros ni tiempos transcurridos — ni en las bandejas ni en "Ver detalles". Esa información vive únicamente en `tiempos.html`, la pantalla de Admin.
+Ninguna pantalla de Comercial, Calidad o CEDIS muestra duraciones, cronómetros, ni ninguna fecha de proceso más allá de la fecha en que se creó la queja — ni en sus bandejas ni en "Ver detalles". Esa información (fechas exactas y duración por etapa) vive únicamente en `admin.html`, la pantalla de Admin. `assets/js/detalle.js` sabe qué rol tiene la sesión actual porque cada pantalla llama a `establecerRolActual(rol)` justo después de `exigirSesion()`.
 
-## Pantallas de Admin (Tiempos / Usuarios)
+## Pantallas de Admin (Administrador / Usuarios)
 
-La cuenta `admin` entra directo a `tiempos.html` (ya no elige entre 4 pantallas, y ya no tiene acceso a Comercial/Calidad/CEDIS). Desde el encabezado se mueve entre sus dos pantallas:
+La cuenta `admin` entra directo a `admin.html` (ya no elige entre 4 pantallas, y ya no tiene acceso a Comercial/Calidad/CEDIS). Desde el encabezado se mueve entre sus dos pantallas:
 
-- **Tiempos** — lista todas las quejas sin importar su estatus, cada una con botones "Ver detalles" y "Eliminar" (RPC `queja_eliminar`, borra en cascada el dictamen, la bitácora de tiempos y desliga cualquier folio de recolección). Al darle clic a "Ver tiempos" se abre una sección desplegable por queja con la duración de cada etapa ya cerrada y, si la queja sigue abierta, la etapa actual con su tiempo transcurrido. Ninguna duración se muestra como reloj en vivo: siempre es un texto fijo (minutos/horas/días/semanas/meses/años) que se actualiza cada minuto (`assets/js/tiempo.js`). El reporte agregado por etapa (promedio/mínimo/máximo, antes al pie de esta pantalla) se quitó del front por pedido de negocio; la vista `vw_tiempos_por_etapa` sigue existiendo en la base de datos por si se vuelve a necesitar, pero ya no se consulta desde aquí.
+- **Administrador** (`admin.html`, antes `tiempos.html`) — lista todas las quejas separadas en dos tarjetas, **"Quejas abiertas"** y **"Quejas cerradas"** (según si su estatus está en la lista de estatus terminales), cada una con botones "Ver detalles" y "Eliminar" (RPC `queja_eliminar`, borra en cascada el dictamen, la bitácora de tiempos y desliga cualquier folio de recolección). Al darle clic a "Ver tiempos" se abre una sección desplegable por queja con la duración de cada etapa ya cerrada y, si la queja sigue abierta, la etapa actual con su tiempo transcurrido. Ninguna duración se muestra como reloj en vivo: siempre es un texto fijo (minutos/horas/días/semanas/meses/años) que se actualiza cada minuto (`assets/js/tiempo.js`) — Admin sigue viendo este formato de texto (no fechas exactas) en este panel; lo que cambió es que "Ver detalles" ahora sí le muestra a Admin las fechas exactas de cada etapa (ver arriba). El reporte agregado por etapa (promedio/mínimo/máximo) se había quitado del front en la ronda anterior; la vista `vw_tiempos_por_etapa` sigue existiendo en la base de datos por si se vuelve a necesitar, pero ya no se consulta desde ningún lado.
 - **Usuarios** (`usuarios.html`) — crea cuentas nuevas llamando a la Edge Function `admin-crear-usuario` (`supabase/functions/admin-crear-usuario/`), que valida que quien llama sea admin y usa la `service_role key` del lado del servidor.
+
+`tiempos.html` sigue existiendo como una página que solo redirige a `admin.html` (por si algún enlace o marcador viejo la usa).
 
 Desde el 28 de septiembre de 2026 una queja nueva ya no pasa por el estatus `nueva`: arranca directo en `esperando_muestra` (por eso Calidad ya no tiene bandeja de "Quejas nuevas").
 
 ## Versión de la app
 
-`assets/js/version.js` exporta `APP_VERSION`, un número de versión visible que se pinta en el pie de página de cada pantalla (incluyendo el login) vía `pintarPie()` en `auth-guard.js`. Sirve para que cualquiera — sobre todo Admin — pueda confirmar de un vistazo que ya tiene la versión más reciente desplegada. **Convención:** cada ronda de cambios que se entregue debe subir este número (minor para pantallas/funciones nuevas o cambiadas, patch para una corrección chica).
+`assets/js/version.js` exporta `APP_VERSION`, un número de versión visible que se pinta en el pie de página de cada pantalla (incluyendo el login) vía `pintarPie()` en `auth-guard.js`. Sirve para que cualquiera — sobre todo Admin — pueda confirmar de un vistazo que ya tiene la versión más reciente desplegada. **Convención:** cada ronda de cambios que se entregue debe subir este número (minor para pantallas/funciones nuevas o cambiadas, patch para una corrección chica). Actual: `1.1.0`.
+
+## Ícono de la marca
+
+`assets/img/logo-zx.png` (128×128) es el ícono oficial de la app: se usa en el encabezado de cada pantalla (con un pequeño fondo blanco para que resalte sobre el azul), en el logo del login y como favicon (`<link rel="icon">`) de cada página HTML. Reemplaza a las letras "ZX" que se dibujaban como texto en rondas anteriores.
 
 ## Botones de acción en la barra superior
 
-El botón principal de cada pantalla (Comercial: "+ Nueva queja"; CEDIS: "Generar folio sin queja") vive en la barra superior junto al nombre de usuario, no dentro de una tarjeta. Se pinta pasando `opciones.boton = { id, texto, titulo? }` a `pintarEncabezado(perfil, tituloPantalla, opciones)`; quien llama debe engancharle su propio listener después, ya que `pintarEncabezado` solo dibuja el `<button>`.
+El botón principal de cada pantalla (Comercial: "Nueva queja"; CEDIS: "Folio sin queja") vive en la barra superior, en forma de pastilla con un ícono redondo a la izquierda del texto, no dentro de una tarjeta. Se pinta pasando `opciones.boton = { id, texto, titulo?, icono? }` a `pintarEncabezado(perfil, tituloPantalla, opciones)`; quien llama debe engancharle su propio listener después, ya que `pintarEncabezado` solo dibuja el `<button>`.
 
 ## Dictamen de Calidad: pop up
 

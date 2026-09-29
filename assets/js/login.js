@@ -3,7 +3,7 @@ import { pintarPie } from './auth-guard.js';
 
 pintarPie();
 
-const DESTINOS = { comercial: 'comercial.html', calidad: 'calidad.html', cedis: 'cedis.html', admin: 'tiempos.html' };
+const DESTINOS = { comercial: 'comercial.html', calidad: 'calidad.html', cedis: 'cedis.html', admin: 'admin.html' };
 
 // El usuario solo escribe una palabra (COMERCIAL, CALIDAD, CEDIS, ADMIN); por
 // dentro Supabase Auth siempre necesita un correo, así que se construye aquí

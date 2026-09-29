@@ -55,17 +55,23 @@ function mostrarBloqueo(mensaje) {
 }
 
 const PANTALLAS_ADMIN = [
-  { href: 'tiempos.html', etiqueta: 'Tiempos' },
+  { href: 'admin.html', etiqueta: 'Administrador' },
   { href: 'usuarios.html', etiqueta: 'Usuarios' },
 ];
 
+/** Etiqueta legible de cada rol (para el botón de usuario del encabezado y otras pantallas). */
+export const ETIQUETAS_ROL = { comercial: 'Comercial', calidad: 'Calidad', cedis: 'CEDIS', admin: 'Administrador' };
+
 /**
- * Pinta el encabezado compartido (logo, título de pantalla, usuario, modo noche, botón salir).
+ * Pinta el encabezado compartido: a la izquierda el ícono (y el título de la pantalla), en medio
+ * las pestañas de admin o el botón de acción propio de la pantalla, y a la derecha un botón con
+ * el nombre del usuario y su rol/departamento que, al darle clic, abre un menú con modo noche y
+ * cerrar sesión.
  * @param {object} perfil
  * @param {string} tituloPantalla
- * @param {{boton?: {id: string, texto: string, titulo?: string}}} [opciones] - botón de acción
- *   extra a mostrar en la barra superior (ej. "+ Nueva queja"). Solo se pinta el <button>; quien
- *   llama debe engancharle su propio listener después de esta función.
+ * @param {{boton?: {id: string, texto: string, titulo?: string, icono?: string}}} [opciones] -
+ *   botón de acción extra a mostrar junto a las pestañas (ej. "Nueva queja"). Solo se pinta el
+ *   <button>; quien llama debe engancharle su propio listener después de esta función.
  */
 export function pintarEncabezado(perfil, tituloPantalla, opciones = {}) {
   const el = document.getElementById('zx-encabezado');
@@ -76,29 +82,57 @@ export function pintarEncabezado(perfil, tituloPantalla, opciones = {}) {
       ${PANTALLAS_ADMIN.map((p) => `<a class="${p.href === paginaActual ? 'zx-nav-activo' : ''}" href="${p.href}">${p.etiqueta}</a>`).join('')}
     </nav>` : '';
   const botonAccion = opciones.boton
-    ? `<button type="button" id="${opciones.boton.id}" class="zx-btn zx-btn-primario zx-btn-sm"${opciones.boton.titulo ? ` title="${escaparHtml(opciones.boton.titulo)}"` : ''}>${escaparHtml(opciones.boton.texto)}</button>`
+    ? `<button type="button" id="${opciones.boton.id}" class="zx-btn-header-accion"${opciones.boton.titulo ? ` title="${escaparHtml(opciones.boton.titulo)}"` : ''}>${opciones.boton.icono ? `<span class="zx-btn-header-icono">${escaparHtml(opciones.boton.icono)}</span>` : ''}<span>${escaparHtml(opciones.boton.texto)}</span></button>`
     : '';
   el.innerHTML = `
     <div class="zx-header-inner">
       <div class="zx-header-marca">
-        <span class="zx-header-logo">ZX</span>
+        <img class="zx-header-logo" src="assets/img/logo-zx.png" alt="ZX" />
         <span class="zx-header-titulo">${tituloPantalla}</span>
       </div>
       ${navAdmin}
       ${botonAccion}
-      <div class="zx-header-usuario">
-        <span>${escaparHtml(perfil.nombre_completo)} · <strong>${escaparHtml(perfil.rol)}</strong></span>
-        <button id="zx-btn-tema" class="zx-btn-tema" type="button" title="Cambiar a modo noche/día"></button>
-        <button id="zx-btn-salir" class="zx-btn zx-btn-ghost zx-btn-sm">Cerrar sesión</button>
+      <div class="zx-header-usuario-menu">
+        <button type="button" id="zx-btn-usuario-menu" class="zx-btn-usuario" aria-haspopup="true" aria-expanded="false">
+          <span class="zx-usuario-nombre">${escaparHtml(perfil.nombre_completo)}</span>
+          <span class="zx-usuario-rol">${escaparHtml(ETIQUETAS_ROL[perfil.rol] || perfil.rol)}</span>
+        </button>
+        <div id="zx-menu-usuario" class="zx-menu-desplegable zx-oculto">
+          <button type="button" id="zx-btn-tema" class="zx-menu-item"></button>
+          <button type="button" id="zx-btn-salir" class="zx-menu-item zx-menu-item-peligro">Cerrar sesión</button>
+        </div>
       </div>
     </div>`;
   document.getElementById('zx-btn-salir').addEventListener('click', cerrarSesion);
+
   const btnTema = document.getElementById('zx-btn-tema');
   pintarIconoTema(btnTema);
   btnTema.addEventListener('click', () => {
     alternarTema();
     pintarIconoTema(btnTema);
   });
+
+  const btnMenu = document.getElementById('zx-btn-usuario-menu');
+  const menu = document.getElementById('zx-menu-usuario');
+  function cerrarMenu() {
+    menu.classList.add('zx-oculto');
+    btnMenu.setAttribute('aria-expanded', 'false');
+  }
+  function abrirMenu() {
+    menu.classList.remove('zx-oculto');
+    btnMenu.setAttribute('aria-expanded', 'true');
+  }
+  btnMenu.addEventListener('click', (evento) => {
+    evento.stopPropagation();
+    if (menu.classList.contains('zx-oculto')) abrirMenu(); else cerrarMenu();
+  });
+  document.addEventListener('click', (evento) => {
+    if (!menu.classList.contains('zx-oculto') && !menu.contains(evento.target) && evento.target !== btnMenu) cerrarMenu();
+  });
+  document.addEventListener('keydown', (evento) => {
+    if (evento.key === 'Escape') cerrarMenu();
+  });
+
   pintarPie();
 }
 
@@ -124,7 +158,7 @@ function temaActual() {
 }
 
 function pintarIconoTema(boton) {
-  boton.textContent = temaActual() === 'oscuro' ? '☀️' : '🌙';
+  boton.textContent = temaActual() === 'oscuro' ? '☀️ Modo día' : '🌙 Modo noche';
 }
 
 /** Alterna entre modo claro/oscuro y lo guarda para futuras visitas. */

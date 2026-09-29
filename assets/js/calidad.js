@@ -1,9 +1,10 @@
 import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml, confirmarAccion } from './auth-guard.js';
-import { botonDetalle, activarBotonesDetalle } from './detalle.js';
+import { botonDetalle, activarBotonesDetalle, establecerRolActual } from './detalle.js';
 
 const sesion = await exigirSesion(['calidad']);
 if (sesion) {
+  establecerRolActual(sesion.perfil.rol);
   pintarEncabezado(sesion.perfil, 'Calidad');
   await cargarTodo();
   escucharCambiosEnVivo();

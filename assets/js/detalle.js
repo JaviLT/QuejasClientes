@@ -2,6 +2,20 @@
 import { supabase } from './supabase-client.js';
 import { escaparHtml } from './auth-guard.js';
 
+// Los tiempos (fechas/horas de cada etapa) son información exclusiva de Admin. Cada pantalla
+// llama a establecerRolActual(rol) justo después de exigirSesion(); mientras no se llame, se
+// asume el criterio más restrictivo (no-admin) para no filtrar fechas por accidente.
+let rolActual = null;
+
+/** Le dice a este módulo qué rol tiene la sesión actual, para decidir qué fechas mostrar en "Ver detalles". */
+export function establecerRolActual(rol) {
+  rolActual = rol;
+}
+
+function esAdmin() {
+  return rolActual === 'admin';
+}
+
 function formatoFecha(iso) {
   if (!iso) return '—';
   try {
@@ -67,12 +81,14 @@ export async function abrirDetalleQueja(id) {
     medidas = med || [];
   }
 
+  // Los tiempos son información exclusiva de Admin: solo Admin ve la fecha/hora de cada etapa.
+  // El resto de los roles ve la lista de etapas ya pasadas, pero sin ninguna fecha junto a ellas.
   const lineaTiempo = (tempos || []).map((t) => `
     <div class="zx-linea-tiempo-item">
       <span class="zx-linea-tiempo-punto"></span>
       <div class="zx-linea-tiempo-texto">
         <strong>${escaparHtml(t.etiqueta)}${t.resultado ? ' · ' + escaparHtml(t.resultado) : ''}</strong>
-        <span class="zx-lt-meta">${formatoFecha(t.fin)}</span>
+        ${esAdmin() ? `<span class="zx-lt-meta">${formatoFecha(t.fin)}</span>` : ''}
         ${t.texto ? `<span class="zx-lt-meta">${escaparHtml(t.texto)}</span>` : ''}
       </div>
     </div>`).join('') || '<p class="zx-vacio">Todavía no hay etapas cerradas.</p>';
@@ -84,7 +100,7 @@ export async function abrirDetalleQueja(id) {
         ${dato('Tipo de acción', dictamenes.tipo_accion === 'correctiva' ? 'Acción correctiva' : 'Acción preventiva')}
         ${dato('Cantidad', dictamenes.cantidad)}
         ${dato('Desviación reportada', dictamenes.desviacion_reportada)}
-        ${dato('Fecha de emisión', dictamenes.fecha_emision)}
+        ${esAdmin() ? dato('Fecha de emisión', dictamenes.fecha_emision) : ''}
         ${dato('Recibido por', dictamenes.recibido_por)}
       </div>
       ${dictamenes.descripcion_problema ? `<p><strong>Descripción del problema:</strong> ${escaparHtml(dictamenes.descripcion_problema)}</p>` : ''}
@@ -99,8 +115,8 @@ export async function abrirDetalleQueja(id) {
       <h3>Recolección</h3>
       <div class="zx-detalle-grid">
         ${dato('Folio', recolecciones.folio)}
-        ${dato('Generado', formatoFecha(recolecciones.generado_en))}
-        ${dato('Enviado', recolecciones.enviado_en ? formatoFecha(recolecciones.enviado_en) : 'Pendiente')}
+        ${esAdmin() ? dato('Generado', formatoFecha(recolecciones.generado_en)) : ''}
+        ${esAdmin() ? dato('Enviado', recolecciones.enviado_en ? formatoFecha(recolecciones.enviado_en) : 'Pendiente') : ''}
       </div>
     </div>` : '';
 

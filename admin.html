@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <script>(function(){try{if(localStorage.getItem('zx-tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}})();</script>
-<title>Quejas de Clientes — CEDIS</title>
+<title>Quejas de Clientes — Administrador</title>
 <link rel="icon" href="assets/img/logo-zx.png" />
 <link rel="stylesheet" href="assets/css/estilos.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -16,25 +16,20 @@
     <div id="zx-mensaje" class="zx-mensaje zx-oculto"></div>
 
     <div class="zx-tarjeta">
-      <h2>
-        Espera de recolección <span id="c-espera" class="zx-contador">0</span>
-      </h2>
-      <div id="lista-espera"></div>
+      <h2>Quejas abiertas <span id="c-abiertas" class="zx-contador">0</span></h2>
+      <p class="zx-fila-meta" style="margin-top:-6px;">Todavía en proceso. Da clic en "Ver tiempos" para ver cuánto duró cada etapa.</p>
+      <div id="lista-abiertas"></div>
     </div>
 
     <div class="zx-tarjeta">
-      <h2>Folios pendientes de enviar <span id="c-pendientes" class="zx-contador">0</span></h2>
-      <div id="lista-pendientes"></div>
-    </div>
-
-    <div class="zx-tarjeta">
-      <h2>Nota de crédito creada <span id="c-nc" class="zx-contador">0</span></h2>
-      <div id="lista-nc"></div>
+      <h2>Quejas cerradas <span id="c-cerradas" class="zx-contador">0</span></h2>
+      <p class="zx-fila-meta" style="margin-top:-6px;">Cerradas o rechazadas, sin importar en qué paso terminaron.</p>
+      <div id="lista-cerradas"></div>
     </div>
   </main>
 
   <footer class="zx-pie">Quejas de Clientes — Zubex</footer>
 
-  <script type="module" src="assets/js/cedis.js"></script>
+  <script type="module" src="assets/js/admin.js"></script>
 </body>
 </html>
