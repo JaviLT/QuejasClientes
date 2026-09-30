@@ -1,6 +1,6 @@
 import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml } from './auth-guard.js';
-import { botonDetalle, activarBotonesDetalle, establecerRolActual, pintarContadorQuejasCerradas } from './detalle.js';
+import { enlaceDetalle, establecerRolActual, ESTADOS_TERMINALES } from './detalle.js';
 import { subirAdjuntos } from './adjuntos.js';
 import { crearSelectorArchivos } from './selector-archivos.js';
 
@@ -12,7 +12,6 @@ if (sesion) {
   });
   await cargarCatalogoTiposQueja();
   await cargarMisQuejas();
-  await pintarContadorQuejasCerradas('zx-contador-quejas-cerradas');
   escucharCambiosEnVivo();
 
   const modalFondo = document.getElementById('zx-modal-nueva-fondo');
@@ -131,10 +130,16 @@ function valorOTexto(id) {
 
 async function cargarMisQuejas() {
   const { data: { session } } = await supabase.auth.getSession();
+  // "Mis quejas recientes" solo muestra quejas abiertas — las cerradas ya no aparecen aquí (ni
+  // en ningún otro lado fuera de quejas-cerradas.html) desde esta ronda. El filtro va en la
+  // consulta, no después, para que el límite de 20 siga trayendo las 20 más recientes que de
+  // verdad importan aquí.
+  const listaTerminales = `(${ESTADOS_TERMINALES.join(',')})`;
   const { data, error } = await supabase
     .from('quejas')
     .select('id, folio, cliente, tipo_queja, estado, creada_en, catalogo_estados(etiqueta)')
     .eq('creada_por', session.user.id)
+    .not('estado', 'in', listaTerminales)
     .order('creada_en', { ascending: false })
     .limit(20);
 
@@ -149,31 +154,26 @@ async function cargarMisQuejas() {
   contador.textContent = data.length;
 
   if (data.length === 0) {
-    lista.innerHTML = '<p class="zx-vacio">Todavía no has registrado ninguna queja.</p>';
+    lista.innerHTML = '<p class="zx-vacio">Todavía no tienes quejas abiertas.</p>';
     return;
   }
 
   lista.innerHTML = data.map((q) => `
     <div class="zx-fila">
       <div class="zx-fila-info">
-        <span class="zx-fila-folio">${escaparHtml(q.folio)} · ${escaparHtml(q.cliente)}</span>
+        ${enlaceDetalle(q.id, q.folio, q.cliente)}
         <span class="zx-fila-meta">${escaparHtml(q.tipo_queja)} · ${new Date(q.creada_en).toLocaleString('es-MX')}</span>
       </div>
       <div class="zx-fila-acciones">
         <span class="zx-contador">${escaparHtml(q.catalogo_estados?.etiqueta || q.estado)}</span>
-        ${botonDetalle(q.id)}
       </div>
     </div>
   `).join('');
-  activarBotonesDetalle(lista);
 }
 
 function escucharCambiosEnVivo() {
   supabase
     .channel('comercial-quejas')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'quejas' }, () => {
-      cargarMisQuejas();
-      pintarContadorQuejasCerradas('zx-contador-quejas-cerradas');
-    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'quejas' }, () => cargarMisQuejas())
     .subscribe();
 }

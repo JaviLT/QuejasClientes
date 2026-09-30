@@ -83,8 +83,8 @@ a { color: var(--zx-secundario); }
   flex: none;
 }
 .zx-header-titulo { font-size: 1.05rem; font-weight: 600; }
-.zx-header-nav-admin { display: flex; gap: 6px; flex-wrap: wrap; }
-.zx-header-nav-admin a {
+.zx-header-nav { display: flex; gap: 6px; flex-wrap: wrap; }
+.zx-header-nav a {
   color: rgba(255,255,255,0.85);
   text-decoration: none;
   font-size: 0.85rem;
@@ -92,8 +92,8 @@ a { color: var(--zx-secundario); }
   padding: 6px 12px;
   border-radius: 999px;
 }
-.zx-header-nav-admin a:hover { background: rgba(255,255,255,0.12); }
-.zx-header-nav-admin a.zx-nav-activo { background: rgba(255,255,255,0.22); color: #fff; }
+.zx-header-nav a:hover { background: rgba(255,255,255,0.12); }
+.zx-header-nav a.zx-nav-activo { background: rgba(255,255,255,0.22); color: #fff; }
 
 /* ---------- Botón de acción del encabezado (ej. "Nueva queja", "Folio sin queja") ---------- */
 .zx-btn-header-accion {
@@ -272,6 +272,10 @@ a { color: var(--zx-secundario); }
 .zx-fila:last-child { border-bottom: none; }
 .zx-fila-info { display: flex; flex-direction: column; gap: 3px; }
 .zx-fila-folio { font-weight: 700; color: var(--zx-primario); }
+/* El título de cada fila (folio · cliente) es el enlace a su detalle desde esta ronda (30 de
+   septiembre de 2026, séptima del día) — ya no hay un botón "Ver detalles" aparte. */
+a.zx-fila-folio { text-decoration: none; cursor: pointer; }
+a.zx-fila-folio:hover { text-decoration: underline; }
 .zx-fila-meta { font-size: 0.82rem; color: var(--zx-texto-suave); }
 .zx-fila-acciones { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
@@ -504,22 +508,39 @@ footer.zx-pie {
 .zx-linea-tiempo-punto { width: 8px; height: 8px; border-radius: 50%; background: var(--zx-secundario); margin-top: 6px; flex: none; }
 .zx-linea-tiempo-texto strong { display: block; }
 .zx-linea-tiempo-texto span.zx-lt-meta { color: var(--zx-texto-suave); font-size: 0.78rem; }
-.zx-btn-detalle { background: transparent; border: 1px solid var(--zx-borde); color: var(--zx-texto-suave); }
-.zx-btn-detalle:hover { border-color: var(--zx-secundario); color: var(--zx-secundario); }
-
-.zx-lista-adjuntos { display: flex; flex-direction: column; gap: 8px; }
-.zx-fila-adjunto {
+/* ---------- Galería de adjuntos del detalle: imagen completa (sin recortar) para fotos, ícono
+   para el resto (PDF, video, etc.), y descarga individual por archivo — 30 de septiembre de 2026,
+   séptima ronda del día. Reemplaza la lista de una sola columna con ícono + nombre + botón. */
+.zx-galeria-adjuntos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+}
+.zx-adjunto-tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--zx-borde);
+  border-radius: 10px;
+}
+.zx-adjunto-vista {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  font-size: 0.85rem;
-  padding: 8px 10px;
-  border: 1px solid var(--zx-borde);
+  justify-content: center;
+  height: 140px;
+  background: var(--zx-fondo-azul);
   border-radius: 8px;
+  overflow: hidden;
 }
+.zx-adjunto-vista-imagen { cursor: zoom-in; }
+.zx-adjunto-imagen { max-width: 100%; max-height: 100%; object-fit: contain; }
+.zx-adjunto-icono { font-size: 2.6rem; line-height: 1; }
+.zx-adjunto-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.zx-adjunto-nombre { font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ---------- Selector de archivos (botón + chips con ícono) ---------- */
+.zx-lista-adjuntos { display: flex; flex-direction: column; gap: 8px; }
 .zx-chip-adjunto {
   display: flex;
   align-items: center;

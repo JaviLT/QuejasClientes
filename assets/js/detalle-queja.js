@@ -1,6 +1,6 @@
 // ZX · Procesos — página de detalle de una queja (antes era un pop up, ver detalle.js).
 import { exigirSesion, pintarEncabezado, escaparHtml } from './auth-guard.js';
-import { establecerRolActual, obtenerDatosQueja, construirContenidoDetalle, activarDescargasAdjuntos } from './detalle.js';
+import { establecerRolActual, obtenerDatosQueja, construirContenidoDetalle, activarAdjuntos } from './detalle.js';
 
 // Cualquier rol con sesión puede ver el detalle de cualquier queja — mismo criterio que ya
 // tenía el pop up (es de solo lectura; lo que cambia según el rol son las fechas de proceso,
@@ -40,5 +40,5 @@ async function cargarDetalle() {
 
   contenedor.innerHTML = construirContenidoDetalle(datos);
   document.title = `Quejas de Clientes — ${datos.q.folio}`;
-  activarDescargasAdjuntos(contenedor);
+  activarAdjuntos(contenedor);
 }

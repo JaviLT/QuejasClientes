@@ -1,6 +1,6 @@
 import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml, confirmarAccion } from './auth-guard.js';
-import { botonDetalle, activarBotonesDetalle, establecerRolActual, pintarContadorQuejasCerradas } from './detalle.js';
+import { enlaceDetalle, establecerRolActual } from './detalle.js';
 
 const sesion = await exigirSesion(['cedis']);
 if (sesion) {
@@ -44,7 +44,6 @@ async function cargarTodo() {
   await cargarEspera();
   await cargarPendientesDeEnvio();
   await cargarNc();
-  await pintarContadorQuejasCerradas('c-cerradas-cedis');
 }
 
 // ---------- Espera de recolección ----------
@@ -70,16 +69,14 @@ async function cargarEspera() {
   contenedor.innerHTML = data.map((q) => `
     <div class="zx-fila">
       <div class="zx-fila-info">
-        <span class="zx-fila-folio">${escaparHtml(q.folio)} · ${escaparHtml(q.cliente)}</span>
+        ${enlaceDetalle(q.id, q.folio, q.cliente)}
         <span class="zx-fila-meta">${escaparHtml(q.tipo_queja || 'Sin tipo')}</span>
       </div>
       <div class="zx-fila-acciones">
-        ${botonDetalle(q.id)}
         <button class="zx-btn zx-btn-secundario zx-btn-sm" data-id="${q.id}" data-accion="material-recibido">Material recibido (generar folio)</button>
       </div>
     </div>
   `).join('');
-  activarBotonesDetalle(contenedor);
 
   contenedor.querySelectorAll('[data-accion="material-recibido"]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -241,17 +238,15 @@ async function cargarNc() {
   contenedor.innerHTML = data.map((q) => `
     <div class="zx-fila" data-id="${q.id}">
       <div class="zx-fila-info">
-        <span class="zx-fila-folio">${escaparHtml(q.folio)} · ${escaparHtml(q.cliente)}</span>
+        ${enlaceDetalle(q.id, q.folio, q.cliente)}
         <span class="zx-fila-meta">${escaparHtml(q.tipo_queja || 'Sin tipo')}</span>
       </div>
       <div class="zx-fila-acciones">
-        ${botonDetalle(q.id)}
         <button class="zx-btn zx-btn-exito zx-btn-sm" data-accion="aceptar">Aceptar NC</button>
         <button class="zx-btn zx-btn-peligro zx-btn-sm" data-accion="rechazar">Rechazar NC</button>
       </div>
     </div>
   `).join('');
-  activarBotonesDetalle(contenedor);
 
   contenedor.querySelectorAll('[data-accion]').forEach((btn) => {
     btn.addEventListener('click', async () => {

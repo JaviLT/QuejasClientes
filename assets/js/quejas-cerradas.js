@@ -1,10 +1,12 @@
-// ZX · Procesos — página con todas las quejas cerradas de la empresa (antes vivía como una
-// bandeja más dentro de cada pantalla de Comercial/Calidad/CEDIS/Admin; desde el 30 de
-// septiembre de 2026, sexta ronda del día, es una página aparte, enlazada desde las cuatro).
+// ZX · Procesos — página con todas las quejas cerradas de la empresa. Es una página aparte desde
+// la ronda anterior (antes vivía como una bandeja más dentro de cada pantalla de
+// Comercial/Calidad/CEDIS/Admin); desde esta ronda (30 de septiembre de 2026, séptima del día) es
+// además la ÚNICA pantalla donde aparecen las quejas cerradas — se llega aquí desde la pestaña
+// "Quejas cerradas" de la barra superior, visible para cualquier rol.
 import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml, confirmarAccion } from './auth-guard.js';
 import { formatoDuracionFija } from './tiempo.js';
-import { botonDetalle, activarBotonesDetalle, establecerRolActual, ESTADOS_TERMINALES } from './detalle.js';
+import { enlaceDetalle, establecerRolActual, ESTADOS_TERMINALES } from './detalle.js';
 
 const TODOS_LOS_ROLES = ['comercial', 'calidad', 'cedis', 'admin'];
 let esAdmin = false;
@@ -58,16 +60,14 @@ async function cargarQuejasCerradas() {
     contenedor.innerHTML = data.map((q) => `
       <div class="zx-fila">
         <div class="zx-fila-info">
-          <span class="zx-fila-folio">${escaparHtml(q.folio)} · ${escaparHtml(q.cliente)}</span>
+          ${enlaceDetalle(q.id, q.folio, q.cliente)}
           <span class="zx-fila-meta">${escaparHtml(q.tipo_queja || 'Sin tipo')} · ${new Date(q.creada_en).toLocaleString('es-MX')}</span>
         </div>
         <div class="zx-fila-acciones">
           <span class="zx-contador">${escaparHtml(q.catalogo_estados?.etiqueta || q.estado)}</span>
-          ${botonDetalle(q.id)}
         </div>
       </div>
     `).join('');
-    activarBotonesDetalle(contenedor);
     return;
   }
 
@@ -78,11 +78,10 @@ async function cargarQuejasCerradas() {
     <div class="zx-fila-expandible" data-id="${q.id}">
       <div class="zx-fila">
         <div class="zx-fila-info">
-          <span class="zx-fila-folio">${escaparHtml(q.folio)} · ${escaparHtml(q.cliente)}</span>
+          ${enlaceDetalle(q.id, q.folio, q.cliente)}
           <span class="zx-fila-meta">${escaparHtml(q.tipo_queja || 'Sin tipo')} · ${escaparHtml(q.catalogo_estados?.etiqueta || q.estado)} · ${new Date(q.creada_en).toLocaleString('es-MX')}</span>
         </div>
         <div class="zx-fila-acciones">
-          ${botonDetalle(q.id)}
           <button type="button" class="zx-btn-expandir" data-accion="expandir">Ver tiempos</button>
           <button type="button" class="zx-btn zx-btn-peligro zx-btn-sm" data-accion="eliminar">Eliminar</button>
         </div>
@@ -92,7 +91,6 @@ async function cargarQuejasCerradas() {
       </div>
     </div>
   `).join('');
-  activarBotonesDetalle(contenedor);
 
   contenedor.querySelectorAll('[data-id]').forEach((fila) => {
     const id = fila.getAttribute('data-id');

@@ -1,7 +1,7 @@
 import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml } from './auth-guard.js';
 import { formatoDuracionFija, iniciarActualizacionFija } from './tiempo.js';
-import { botonDetalle, activarBotonesDetalle, establecerRolActual, ESTADOS_TERMINALES } from './detalle.js';
+import { enlaceDetalle, establecerRolActual, ESTADOS_TERMINALES } from './detalle.js';
 
 const sesion = await exigirSesion(['admin']);
 if (sesion) {
@@ -24,11 +24,16 @@ async function cargarTodo() {
   await cargarQuejas();
 }
 
-// ---------- Todas las quejas, separadas en abiertas / cerradas ----------
+// ---------- Quejas abiertas ----------
+// Las quejas cerradas ya no se traen ni se pintan aquí: desde esta ronda (30 de septiembre de
+// 2026, séptima del día) viven únicamente en quejas-cerradas.html — accesible desde la pestaña
+// "Quejas cerradas" de la barra superior — y en ningún otro lado, ni siquiera como conteo.
 async function cargarQuejas() {
+  const listaTerminales = `(${ESTADOS_TERMINALES.join(',')})`;
   const { data, error } = await supabase
     .from('quejas')
     .select('id, folio, cliente, tipo_queja, estado, creada_en, tempo_activo_desde, tempo_label_activo, catalogo_estados(etiqueta)')
+    .not('estado', 'in', listaTerminales)
     .order('creada_en', { ascending: false });
 
   if (error) {
@@ -36,14 +41,7 @@ async function cargarQuejas() {
     return;
   }
 
-  const abiertas = data.filter((q) => !ESTADOS_TERMINALES.includes(q.estado));
-  const cerradas = data.filter((q) => ESTADOS_TERMINALES.includes(q.estado));
-
-  pintarLista('lista-abiertas', 'c-abiertas', abiertas, 'No hay quejas abiertas.');
-  // "Quejas cerradas" ya no se pinta aquí: desde esta ronda vive en quejas-cerradas.html (junto
-  // con Comercial/Calidad/CEDIS), y esta pantalla solo enlaza ahí. El conteo sale gratis del
-  // mismo query de arriba, sin pedirlo aparte.
-  document.getElementById('c-cerradas-enlace').textContent = cerradas.length;
+  pintarLista('lista-abiertas', 'c-abiertas', data, 'No hay quejas abiertas.');
 }
 
 function pintarLista(contenedorId, contadorId, quejas, textoVacio) {
@@ -59,11 +57,10 @@ function pintarLista(contenedorId, contadorId, quejas, textoVacio) {
     <div class="zx-fila-expandible" data-id="${q.id}" data-estado="${escaparHtml(q.estado)}" data-desde-activo="${q.tempo_activo_desde || ''}" data-etiqueta-activa="${escaparHtml(q.tempo_label_activo || '')}">
       <div class="zx-fila">
         <div class="zx-fila-info">
-          <span class="zx-fila-folio">${escaparHtml(q.folio)} · ${escaparHtml(q.cliente)}</span>
+          ${enlaceDetalle(q.id, q.folio, q.cliente)}
           <span class="zx-fila-meta">${escaparHtml(q.tipo_queja || 'Sin tipo')} · ${escaparHtml(q.catalogo_estados?.etiqueta || q.estado)} · ${new Date(q.creada_en).toLocaleString('es-MX')}</span>
         </div>
         <div class="zx-fila-acciones">
-          ${botonDetalle(q.id)}
           <button type="button" class="zx-btn-expandir" data-accion="expandir">Ver tiempos</button>
           <button type="button" class="zx-btn zx-btn-peligro zx-btn-sm" data-accion="eliminar">Eliminar</button>
         </div>
@@ -73,7 +70,6 @@ function pintarLista(contenedorId, contadorId, quejas, textoVacio) {
       </div>
     </div>
   `).join('');
-  activarBotonesDetalle(contenedor);
 
   contenedor.querySelectorAll('[data-id]').forEach((fila) => {
     const id = fila.getAttribute('data-id');

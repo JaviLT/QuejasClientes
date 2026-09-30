@@ -59,6 +59,13 @@ const PANTALLAS_ADMIN = [
   { href: 'usuarios.html', etiqueta: 'Usuarios' },
 ];
 
+// "Quejas cerradas" ahora es una pestaña de la barra superior, visible para cualquier rol con
+// sesión — antes era una tarjeta repetida dentro de cada pantalla (Comercial/Calidad/CEDIS/Admin)
+// que además mostraba una lista aparte. Desde esta ronda (30 de septiembre de 2026, séptima del
+// día) las quejas cerradas solo aparecen en quejas-cerradas.html y en ningún otro lado; esta
+// pestaña es la única puerta de entrada a esa pantalla.
+const PANTALLA_CERRADAS = { href: 'quejas-cerradas.html', etiqueta: 'Quejas cerradas' };
+
 /** Etiqueta legible de cada rol (para el botón de usuario del encabezado y otras pantallas). */
 export const ETIQUETAS_ROL = { comercial: 'Comercial', calidad: 'Calidad', cedis: 'CEDIS', admin: 'Administrador' };
 
@@ -77,10 +84,11 @@ export function pintarEncabezado(perfil, tituloPantalla, opciones = {}) {
   const el = document.getElementById('zx-encabezado');
   if (!el) return;
   const paginaActual = location.pathname.split('/').pop();
-  const navAdmin = perfil.rol === 'admin' ? `
-    <nav class="zx-header-nav-admin">
-      ${PANTALLAS_ADMIN.map((p) => `<a class="${p.href === paginaActual ? 'zx-nav-activo' : ''}" href="${p.href}">${p.etiqueta}</a>`).join('')}
-    </nav>` : '';
+  const pantallasNav = perfil.rol === 'admin' ? [...PANTALLAS_ADMIN, PANTALLA_CERRADAS] : [PANTALLA_CERRADAS];
+  const navAdmin = `
+    <nav class="zx-header-nav">
+      ${pantallasNav.map((p) => `<a class="${p.href === paginaActual ? 'zx-nav-activo' : ''}" href="${p.href}">${p.etiqueta}</a>`).join('')}
+    </nav>`;
   const botonAccion = opciones.boton
     ? `<button type="button" id="${opciones.boton.id}" class="zx-btn-header-accion"${opciones.boton.titulo ? ` title="${escaparHtml(opciones.boton.titulo)}"` : ''}>${opciones.boton.icono ? `<span class="zx-btn-header-icono">${escaparHtml(opciones.boton.icono)}</span>` : ''}<span>${escaparHtml(opciones.boton.texto)}</span></button>`
     : '';

@@ -1,15 +1,18 @@
 // ZX · Procesos — datos y HTML compartidos del detalle de una queja.
 //
-// Hasta la ronda anterior, "Ver detalles" abría un pop up construido por este mismo módulo.
-// Desde esta ronda (30 de septiembre de 2026, sexta del día) el detalle vive en su propia
-// página (detalle-queja.html?id=...), a petición del usuario — sobre todo para que los
-// adjuntos de la queja tengan más espacio. Este módulo ya no abre ningún modal: solo expone
-// los datos (obtenerDatosQueja) y el HTML del contenido (construirContenidoDetalle) para que
-// detalle-queja.js los pinte dentro de la página. botonDetalle() ahora genera un enlace normal
-// en vez de un botón con listener.
+// El detalle vive en su propia página (detalle-queja.html?id=...) desde la ronda anterior, a
+// petición del usuario — sobre todo para que los adjuntos de la queja tengan más espacio. Este
+// módulo expone los datos (obtenerDatosQueja) y el HTML del contenido (construirContenidoDetalle)
+// para que detalle-queja.js los pinte dentro de la página.
+//
+// Desde esta ronda (30 de septiembre de 2026, séptima del día): ya no hay un botón "Ver
+// detalles" aparte — el título de cada fila (folio · cliente) ya es el enlace (enlaceDetalle).
+// Y los adjuntos se ven distinto según el tipo: las imágenes se muestran completas (sin recortar)
+// y el resto (PDF, video, etc.) muestra su ícono — en ambos casos con un botón de descarga
+// individual por archivo (activarAdjuntos).
 import { supabase } from './supabase-client.js';
 import { escaparHtml } from './auth-guard.js';
-import { formatoTamano, iconoParaArchivo } from './adjuntos.js';
+import { formatoTamano, iconoParaArchivo, esImagenAdjunto } from './adjuntos.js';
 
 // Los tiempos (fechas/horas de cada etapa) son información exclusiva de Admin. Cada pantalla
 // llama a establecerRolActual(rol) justo después de exigirSesion(); mientras no se llame, se
@@ -110,12 +113,22 @@ export function construirContenidoDetalle(datos) {
     <div class="zx-detalle-seccion">
       <h3>Adjuntos <span class="zx-contador">${adjuntos.length}</span></h3>
       ${adjuntos.length > 0 ? `
-      <div class="zx-lista-adjuntos">
-        ${adjuntos.map((a) => `
-          <div class="zx-fila-adjunto">
-            <span><span aria-hidden="true">${iconoParaArchivo(a.tipo_mime, a.nombre_archivo)}</span> ${escaparHtml(a.nombre_archivo)}${a.tamanio_bytes ? ` <span class="zx-lt-meta">(${formatoTamano(a.tamanio_bytes)})</span>` : ''}</span>
-            <button type="button" class="zx-btn zx-btn-secundario zx-btn-sm" data-descargar-adjunto="${escaparHtml(a.ruta_storage)}">Descargar</button>
-          </div>`).join('')}
+      <div class="zx-galeria-adjuntos">
+        ${adjuntos.map((a) => {
+          const esImagen = esImagenAdjunto(a.tipo_mime, a.nombre_archivo);
+          const vista = esImagen
+            ? `<a class="zx-adjunto-vista zx-adjunto-vista-imagen" data-ver-imagen target="_blank" rel="noopener" title="Ver imagen completa"><img class="zx-adjunto-imagen" data-imagen-adjunto alt="${escaparHtml(a.nombre_archivo)}" /></a>`
+            : `<span class="zx-adjunto-vista"><span class="zx-adjunto-icono" aria-hidden="true">${iconoParaArchivo(a.tipo_mime, a.nombre_archivo)}</span></span>`;
+          return `
+          <div class="zx-adjunto-tarjeta" data-ruta-adjunto="${escaparHtml(a.ruta_storage)}">
+            ${vista}
+            <div class="zx-adjunto-info">
+              <span class="zx-adjunto-nombre" title="${escaparHtml(a.nombre_archivo)}">${escaparHtml(a.nombre_archivo)}</span>
+              ${a.tamanio_bytes ? `<span class="zx-lt-meta">${formatoTamano(a.tamanio_bytes)}</span>` : ''}
+            </div>
+            <button type="button" class="zx-btn zx-btn-secundario zx-btn-sm" data-descargar-adjunto="${escaparHtml(a.ruta_storage)}" data-nombre-adjunto="${escaparHtml(a.nombre_archivo)}">Descargar</button>
+          </div>`;
+        }).join('')}
       </div>` : '<p class="zx-vacio">Esta queja no tiene archivos adjuntos.</p>'}
     </div>`;
 
@@ -170,20 +183,40 @@ export function construirContenidoDetalle(datos) {
   `;
 }
 
-/** Engancha el botón "Descargar" de cada adjunto pintado por construirContenidoDetalle(). Llamar
+/** Activa la galería de adjuntos pintada por construirContenidoDetalle(): carga la vista previa
+ * completa de cada imagen (sin recortar) y engancha el botón "Descargar" de cada archivo — uno
+ * por uno, para que se pueda bajar solo el que hace falta sin tener que abrir los demás. Llamar
  * una vez después de insertar ese HTML en la página. */
-export function activarDescargasAdjuntos(contenedor) {
+export function activarAdjuntos(contenedor) {
+  // Imágenes: se cargan de una vez, como vista previa — no hace falta darle clic a nada para verlas.
+  contenedor.querySelectorAll('[data-imagen-adjunto]').forEach((img) => {
+    (async () => {
+      const tarjeta = img.closest('[data-ruta-adjunto]');
+      const ruta = tarjeta?.getAttribute('data-ruta-adjunto');
+      if (!ruta) return;
+      const { data, error } = await supabase.storage.from('adjuntos-quejas').createSignedUrl(ruta, 3600);
+      if (error || !data?.signedUrl) return; // se queda el marco vacío; no es crítico
+      img.src = data.signedUrl;
+      const enlace = img.closest('[data-ver-imagen]');
+      if (enlace) enlace.href = data.signedUrl; // clic en la imagen = verla a tamaño completo en pestaña nueva
+    })();
+  });
+
+  // Descarga individual: cada botón trae y descarga solo su propio archivo (con su nombre
+  // original), nunca los demás — usa el modo "download" del enlace firmado para que el navegador
+  // lo guarde directo en vez de solo abrirlo.
   contenedor.querySelectorAll('[data-descargar-adjunto]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const ruta = btn.getAttribute('data-descargar-adjunto');
+      const nombre = btn.getAttribute('data-nombre-adjunto') || true;
       btn.disabled = true;
       const textoOriginal = btn.textContent;
-      btn.textContent = 'Abriendo…';
-      const { data, error } = await supabase.storage.from('adjuntos-quejas').createSignedUrl(ruta, 60);
+      btn.textContent = 'Descargando…';
+      const { data, error } = await supabase.storage.from('adjuntos-quejas').createSignedUrl(ruta, 60, { download: nombre });
       btn.disabled = false;
       btn.textContent = textoOriginal;
       if (error || !data?.signedUrl) {
-        window.alert('No se pudo abrir el archivo: ' + (error?.message || 'error desconocido'));
+        window.alert('No se pudo descargar el archivo: ' + (error?.message || 'error desconocido'));
         return;
       }
       window.open(data.signedUrl, '_blank', 'noopener');
@@ -191,34 +224,16 @@ export function activarDescargasAdjuntos(contenedor) {
   });
 }
 
-/** Genera el enlace "Ver detalles" que lleva a la página detalle-queja.html?id=... — ya no abre
- * ningún pop up. Se ve y se usa igual que el botón de siempre porque comparte la clase .zx-btn. */
-export function botonDetalle(id) {
-  return `<a href="detalle-queja.html?id=${encodeURIComponent(id)}" class="zx-btn zx-btn-detalle zx-btn-sm">Ver detalles</a>`;
-}
-
-/** Ya no hace falta: botonDetalle() ahora es un enlace normal, no un botón con listener. Se deja
- * como función vacía (en vez de quitar la llamada de cada pantalla) para no tener que tocar
- * todos los lugares que todavía la invocan después de pintar sus filas. */
-export function activarBotonesDetalle(contenedor) {
-  // sin efecto — ver comentario arriba.
+/** Genera el título de una fila (folio · cliente) como enlace directo a detalle-queja.html?id=...
+ * — desde esta ronda (30 de septiembre de 2026, séptima del día) ya no hay un botón "Ver
+ * detalles" aparte: se le da clic al título. */
+export function enlaceDetalle(id, folio, cliente) {
+  return `<a href="detalle-queja.html?id=${encodeURIComponent(id)}" class="zx-fila-folio">${escaparHtml(folio)} · ${escaparHtml(cliente)}</a>`;
 }
 
 // Lista de estados que se consideran "cerrados" (ya no están en proceso): aceptadas al final
-// (cerrada) o rechazadas en cualquiera de las etapas donde eso es posible. admin.js y
-// quejas-cerradas.js importan esta misma constante en vez de tener cada uno su propia copia.
+// (cerrada) o rechazadas en cualquiera de las etapas donde eso es posible. admin.js,
+// comercial.js y quejas-cerradas.js importan esta misma constante en vez de tener cada uno su
+// propia copia — también sirve para que ninguna de esas pantallas muestre, ni por accidente,
+// una queja ya cerrada (esas solo viven en quejas-cerradas.html desde esta ronda).
 export const ESTADOS_TERMINALES = ['cerrada', 'rechazada_calidad', 'rechazada_dictamen', 'rechazada_revision', 'rechazada_nc'];
-
-/** Pinta solo el número de quejas cerradas (sin la lista) en el contador de la tarjeta-enlace
- * que llevan a quejas-cerradas.html. Antes esta bandeja se pintaba completa dentro de cada
- * pantalla (Comercial/Calidad/CEDIS); desde esta ronda esa lista vive en su propia página, así
- * que aquí solo hace falta un conteo, no traer y pintar cada fila. */
-export async function pintarContadorQuejasCerradas(contadorId) {
-  const el = document.getElementById(contadorId);
-  if (!el) return;
-  const { count, error } = await supabase
-    .from('quejas')
-    .select('id', { count: 'exact', head: true })
-    .in('estado', ESTADOS_TERMINALES);
-  el.textContent = error ? '—' : (count ?? 0);
-}

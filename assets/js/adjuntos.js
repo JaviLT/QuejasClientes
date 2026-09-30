@@ -35,6 +35,16 @@ export function iconoParaArchivo(tipoMime, nombre) {
   return '📎';
 }
 
+/** true si el archivo es una imagen (por tipo MIME o, si no hay MIME, por extensión) — se usa en
+ * el detalle de la queja (detalle.js) para decidir si se ve la imagen completa o solo un ícono. */
+export function esImagenAdjunto(tipoMime, nombre) {
+  const mime = tipoMime || '';
+  if (mime.startsWith('image/')) return true;
+  if (mime) return false; // ya sabemos el tipo y no es imagen — no hace falta adivinar por extensión
+  const extension = (nombre || '').split('.').pop()?.toLowerCase() || '';
+  return ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'heic'].includes(extension);
+}
+
 /** Sube cada archivo a Storage (bucket adjuntos-quejas) y registra su referencia en queja_adjuntos.
  * Devuelve la lista de nombres de archivo que no se pudieron subir (si alguno falla). */
 export async function subirAdjuntos(quejaId, archivos) {

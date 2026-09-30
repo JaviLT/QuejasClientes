@@ -1,6 +1,6 @@
 import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml, confirmarAccion } from './auth-guard.js';
-import { botonDetalle, activarBotonesDetalle, establecerRolActual, pintarContadorQuejasCerradas } from './detalle.js';
+import { enlaceDetalle, establecerRolActual } from './detalle.js';
 import { subirAdjuntos } from './adjuntos.js';
 import { crearSelectorArchivos } from './selector-archivos.js';
 
@@ -47,7 +47,7 @@ async function obtenerQuejasPorEstado(estado) {
 function encabezadoFila(q) {
   return `
     <div class="zx-fila-info">
-      <span class="zx-fila-folio">${escaparHtml(q.folio)} · ${escaparHtml(q.cliente)}</span>
+      ${enlaceDetalle(q.id, q.folio, q.cliente)}
       <span class="zx-fila-meta">${escaparHtml(q.tipo_queja || 'Sin tipo')}${q.prioridad ? ' · Prioridad ' + q.prioridad : ''}</span>
     </div>`;
 }
@@ -66,7 +66,6 @@ async function renderizarSimple(contenedorId, contadorId, estado, botones) {
     <div class="zx-fila">
       ${encabezadoFila(q)}
       <div class="zx-fila-acciones" data-id="${q.id}">
-        ${botonDetalle(q.id)}
         ${botones}
       </div>
     </div>
@@ -99,7 +98,6 @@ async function renderizarSimple(contenedorId, contadorId, estado, botones) {
       }
     });
   });
-  activarBotonesDetalle(contenedor);
 }
 
 async function renderizarConTexto(contenedorId, contadorId, estado, rpcNombre, etiquetaCampo) {
@@ -119,7 +117,6 @@ async function renderizarConTexto(contenedorId, contadorId, estado, rpcNombre, e
       </div>
       <textarea class="zx-textarea-inline" placeholder="${etiquetaCampo}" data-texto></textarea>
       <div class="zx-fila-acciones">
-        ${botonDetalle(q.id)}
         <button class="zx-btn zx-btn-exito zx-btn-sm" data-accion="aceptar">Aceptar</button>
         <button class="zx-btn zx-btn-peligro zx-btn-sm" data-accion="rechazar">Rechazar</button>
       </div>
@@ -147,7 +144,6 @@ async function renderizarConTexto(contenedorId, contadorId, estado, rpcNombre, e
       });
     });
   });
-  activarBotonesDetalle(contenedor);
 }
 
 // ---------- Dictamen (VEN-F-08): lista con "Iniciar dictamen" + formulario en pop up ----------
@@ -165,7 +161,6 @@ async function renderizarDictamenLista(contenedorId, contadorId, estado) {
     <div class="zx-fila">
       ${encabezadoFila(q)}
       <div class="zx-fila-acciones" data-id="${q.id}">
-        ${botonDetalle(q.id)}
         <button type="button" class="zx-btn zx-btn-secundario zx-btn-sm" data-accion="iniciar-dictamen">Iniciar dictamen</button>
       </div>
     </div>
@@ -178,7 +173,6 @@ async function renderizarDictamenLista(contenedorId, contadorId, estado) {
       abrirModalDictamen(id, folio);
     });
   });
-  activarBotonesDetalle(contenedor);
 }
 
 function filaEquipo() {
@@ -379,7 +373,6 @@ async function cargarTodo() {
     <button class="zx-btn zx-btn-secundario zx-btn-sm" data-accion="material_recibido">Material recibido</button>
   `);
   await renderizarConTexto('lista-revision', 'c-revision', 'revision_pendiente', 'queja_revision', 'Texto de la revisión');
-  await pintarContadorQuejasCerradas('c-cerradas-calidad');
 }
 
 function escucharCambiosEnVivo() {
