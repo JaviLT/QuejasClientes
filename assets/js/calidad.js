@@ -1,6 +1,8 @@
 import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml, confirmarAccion } from './auth-guard.js';
 import { botonDetalle, activarBotonesDetalle, establecerRolActual } from './detalle.js';
+import { subirAdjuntos } from './adjuntos.js';
+import { crearSelectorArchivos } from './selector-archivos.js';
 
 const sesion = await exigirSesion(['calidad']);
 if (sesion) {
@@ -284,6 +286,12 @@ function abrirModalDictamen(id, folio) {
         </div>
       </div>
 
+      <div class="zx-dictamen-seccion">
+        <span class="zx-etiqueta-seccion">Adjuntos (evidencia del dictamen — opcional)</span>
+        <div data-selector-adjuntos-dictamen></div>
+        <span class="zx-fila-meta" style="display:block; margin-top:4px;">Máximo 15 MB por archivo.</span>
+      </div>
+
       <div class="zx-fila-acciones" style="margin-top:14px;">
         <button class="zx-btn zx-btn-exito zx-btn-sm" data-accion="aceptar">Aceptado</button>
         <button class="zx-btn zx-btn-peligro zx-btn-sm" data-accion="rechazar">Rechazado</button>
@@ -294,6 +302,10 @@ function abrirModalDictamen(id, folio) {
   modal.querySelector('[data-cerrar]').addEventListener('click', cerrarModalDictamen);
   activarSubtabla(modal, '[data-fila-equipo]', () => filaEquipo(), 'equipo');
   activarSubtabla(modal, '[data-fila-medida]', () => filaMedida(), 'medidas');
+  const selectorAdjuntosDictamen = crearSelectorArchivos({
+    contenedor: modal.querySelector('[data-selector-adjuntos-dictamen]'),
+    textoBoton: 'Elegir archivos',
+  });
 
   modal.querySelectorAll('[data-accion]').forEach((btn) => {
     btn.addEventListener('click', async () => {
@@ -335,12 +347,19 @@ function abrirModalDictamen(id, folio) {
         medidas,
       };
 
+      const archivosDictamen = selectorAdjuntosDictamen.obtenerArchivos();
       const ok = await llamarRpc(
         'queja_dictamen',
         { p_id: id, p_dictamen, p_aceptar: aceptar },
         aceptar ? 'Dictamen registrado como aceptado.' : 'Dictamen registrado como rechazado.'
       );
       if (ok) {
+        if (archivosDictamen.length > 0) {
+          const fallos = await subirAdjuntos(id, archivosDictamen);
+          if (fallos.length > 0) {
+            mostrarMensaje(`Dictamen guardado, pero no se pudieron subir estos archivos: ${fallos.join(', ')}.`, false);
+          }
+        }
         cerrarModalDictamen();
       } else {
         modal.querySelectorAll('[data-accion]').forEach((b) => (b.disabled = false));

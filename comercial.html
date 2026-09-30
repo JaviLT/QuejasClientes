@@ -75,6 +75,10 @@
             <label for="factura">Factura</label>
             <input type="text" id="factura" />
           </div>
+          <div class="zx-campo">
+            <label for="ids">ID's</label>
+            <input type="text" id="ids" />
+          </div>
         </div>
 
         <h2 style="margin-top:22px;">D2 — Descripción del problema</h2>
@@ -107,8 +111,8 @@
 
         <h2 style="margin-top:22px;">Adjuntos</h2>
         <div class="zx-campo zx-ancho-completo">
-          <label for="adjuntos">Archivos (PDF, fotos, video — puedes seleccionar varios)</label>
-          <input type="file" id="adjuntos" multiple />
+          <label>Archivos (PDF, fotos, video — puedes agregar varios, uno por uno o varios a la vez)</label>
+          <div id="zx-selector-adjuntos"></div>
           <span class="zx-fila-meta" style="display:block; margin-top:4px;">Máximo 15 MB por archivo.</span>
         </div>
 

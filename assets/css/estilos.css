@@ -513,3 +513,24 @@ footer.zx-pie {
   border: 1px solid var(--zx-borde);
   border-radius: 8px;
 }
+
+/* ---------- Selector de archivos (botón + chips con ícono) ---------- */
+.zx-chip-adjunto {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  padding: 8px 10px;
+  border: 1px solid var(--zx-borde);
+  border-radius: 8px;
+  background: var(--zx-fondo-azul);
+}
+.zx-chip-icono { font-size: 1.1rem; flex: none; }
+.zx-chip-nombre {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.zx-chip-tamano { color: var(--zx-texto-suave); font-size: 0.78rem; flex: none; }

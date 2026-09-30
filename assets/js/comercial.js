@@ -1,11 +1,8 @@
 import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml } from './auth-guard.js';
 import { botonDetalle, activarBotonesDetalle, establecerRolActual } from './detalle.js';
-
-// Los adjuntos se guardan en Supabase Storage (bucket "adjuntos-quejas"), no en la base de
-// datos — en la tabla queja_adjuntos solo queda una referencia chiquita (nombre + ruta).
-// Este límite por archivo cuida el 1 GB gratis del plan de Storage.
-const MAX_ADJUNTO_BYTES = 15 * 1024 * 1024; // 15 MB
+import { subirAdjuntos } from './adjuntos.js';
+import { crearSelectorArchivos } from './selector-archivos.js';
 
 const sesion = await exigirSesion(['comercial']);
 if (sesion) {
@@ -19,6 +16,10 @@ if (sesion) {
 
   const modalFondo = document.getElementById('zx-modal-nueva-fondo');
   const modalMensaje = document.getElementById('zx-modal-mensaje');
+  const selectorAdjuntos = crearSelectorArchivos({
+    contenedor: document.getElementById('zx-selector-adjuntos'),
+    textoBoton: 'Elegir archivos',
+  });
 
   function abrirModalNueva() {
     modalMensaje.classList.add('zx-oculto');
@@ -37,16 +38,9 @@ if (sesion) {
     evento.preventDefault();
     modalMensaje.classList.add('zx-oculto');
 
-    // Antes de tocar la base, valida que ningún adjunto pase del límite por archivo.
-    const inputAdjuntos = document.getElementById('adjuntos');
-    const archivos = Array.from(inputAdjuntos.files || []);
-    const archivosGrandes = archivos.filter((f) => f.size > MAX_ADJUNTO_BYTES);
-    if (archivosGrandes.length > 0) {
-      modalMensaje.textContent = `${archivosGrandes.map((f) => f.name).join(', ')}: cada archivo debe pesar 15 MB o menos.`;
-      modalMensaje.className = 'zx-mensaje zx-mensaje-error';
-      modalMensaje.classList.remove('zx-oculto');
-      return;
-    }
+    // El selector de archivos ya filtra los que pasan de 15 MB al elegirlos, así que aquí solo
+    // se lee la lista final (lo que haya quedado después de agregar/quitar en el selector).
+    const archivos = selectorAdjuntos.obtenerArchivos();
 
     // Registrar una queja nueva es una captura, no un cambio de proceso sobre una queja
     // existente, así que aquí no pedimos doble check (a diferencia de aceptar/rechazar/etc.).
@@ -64,6 +58,7 @@ if (sesion) {
       pedido: valorOTexto('pedido'),
       factura: valorOTexto('factura'),
       lote: valorOTexto('lote'),
+      ids: valorOTexto('ids'),
       prioridad: prioridadTexto === '' ? null : Number(prioridadTexto),
       d2_quien: valorOTexto('d2_quien'),
       d2_que: valorOTexto('d2_que'),
@@ -102,37 +97,10 @@ if (sesion) {
     mensaje.textContent = `Queja registrada con folio ${data.folio}.${avisoAdjuntos}`;
     mensaje.className = 'zx-mensaje ' + (avisoAdjuntos ? 'zx-mensaje-error' : 'zx-mensaje-ok');
     document.getElementById('zx-form-queja').reset();
+    selectorAdjuntos.limpiar();
     cerrarModalNueva();
     await cargarMisQuejas();
   });
-}
-
-/** Sube cada archivo a Storage (bucket adjuntos-quejas) y registra su referencia en queja_adjuntos.
- * Devuelve la lista de nombres de archivo que no se pudieron subir (si alguno falla). */
-async function subirAdjuntos(quejaId, archivos) {
-  const fallos = [];
-  for (const archivo of archivos) {
-    const nombreSaneado = archivo.name.replace(/[^\w.\-]+/g, '_');
-    const ruta = `${quejaId}/${Date.now()}-${nombreSaneado}`;
-    const { error: errorSubida } = await supabase.storage.from('adjuntos-quejas').upload(ruta, archivo);
-    if (errorSubida) {
-      console.error(errorSubida);
-      fallos.push(archivo.name);
-      continue;
-    }
-    const { error: errorFila } = await supabase.from('queja_adjuntos').insert({
-      queja_id: quejaId,
-      nombre_archivo: archivo.name,
-      ruta_storage: ruta,
-      tipo_mime: archivo.type || null,
-      tamanio_bytes: archivo.size,
-    });
-    if (errorFila) {
-      console.error(errorFila);
-      fallos.push(archivo.name);
-    }
-  }
-  return fallos;
 }
 
 async function cargarCatalogoTiposQueja() {

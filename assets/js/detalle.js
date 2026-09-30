@@ -1,6 +1,7 @@
 // ZX · Procesos — modal compartido "Ver detalles" de una queja (datos + línea de tiempo + dictamen si existe).
 import { supabase } from './supabase-client.js';
 import { escaparHtml } from './auth-guard.js';
+import { formatoTamano, iconoParaArchivo } from './adjuntos.js';
 
 // Los tiempos (fechas/horas de cada etapa) son información exclusiva de Admin. Cada pantalla
 // llama a establecerRolActual(rol) justo después de exigirSesion(); mientras no se llame, se
@@ -27,13 +28,6 @@ function formatoFecha(iso) {
 
 function dato(etiqueta, valor) {
   return `<div class="zx-detalle-dato"><span>${escaparHtml(etiqueta)}</span>${escaparHtml(valor || '—')}</div>`;
-}
-
-function formatoTamano(bytes) {
-  if (!bytes && bytes !== 0) return '';
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function cerrarModal() {
@@ -124,7 +118,7 @@ export async function abrirDetalleQueja(id) {
       <div class="zx-lista-adjuntos">
         ${adjuntos.map((a) => `
           <div class="zx-fila-adjunto">
-            <span>${escaparHtml(a.nombre_archivo)}${a.tamanio_bytes ? ` <span class="zx-lt-meta">(${formatoTamano(a.tamanio_bytes)})</span>` : ''}</span>
+            <span><span aria-hidden="true">${iconoParaArchivo(a.tipo_mime, a.nombre_archivo)}</span> ${escaparHtml(a.nombre_archivo)}${a.tamanio_bytes ? ` <span class="zx-lt-meta">(${formatoTamano(a.tamanio_bytes)})</span>` : ''}</span>
             <button type="button" class="zx-btn zx-btn-secundario zx-btn-sm" data-descargar-adjunto="${escaparHtml(a.ruta_storage)}">Descargar</button>
           </div>`).join('')}
       </div>
@@ -156,6 +150,7 @@ export async function abrirDetalleQueja(id) {
       ${dato('Pedido', q.pedido)}
       ${dato('Lote', q.lote)}
       ${dato('Factura', q.factura)}
+      ${dato('ID\'s', q.ids)}
       ${dato('Prioridad', q.prioridad)}
       ${dato('Registrada por', q.profiles?.nombre_completo)}
       ${dato('Fecha de registro', formatoFecha(q.creada_en))}

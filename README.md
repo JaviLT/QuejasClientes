@@ -21,6 +21,8 @@ assets/js/
   auth-guard.js          Exige sesión + rol correcto en cada pantalla, pinta el encabezado (ícono, pestañas/botón de acción, botón de usuario con menú de modo noche y cerrar sesión, y la versión en el pie), y centraliza el doble check (`confirmarAccion`)
   tiempo.js               Duración fija y legible de cada etapa (minutos/horas/días/semanas/meses/años) — nunca un reloj en vivo, y solo la usa `admin.js`
   detalle.js              Modal compartido "Ver detalles" de una queja (datos + línea de tiempo + dictamen + adjuntos) — la línea de tiempo y otras fechas de proceso solo se muestran completas si quien mira la pantalla es Admin (ver "Tiempos: solo para Admin")
+  adjuntos.js             Lógica compartida de adjuntos (límite de 15 MB, íconos por tipo de archivo, subida a Storage + registro en queja_adjuntos) — la usan comercial.js, calidad.js y detalle.js
+  selector-archivos.js    Widget reutilizable "elegir archivos": botón + lista de chips con ícono y botón de quitar, permite ir agregando archivos en varias selecciones sin perder los anteriores — lo usan comercial.js (Nueva queja) y calidad.js (dictamen)
   login.js, comercial.js, calidad.js, cedis.js, admin.js, usuarios.js   Lógica de cada pantalla
 supabase/migrations/     Esquema completo de la base de datos (SQL)
 supabase/functions/admin-crear-usuario/   Edge Function para crear usuarios (usa la service_role key del lado del servidor)
@@ -88,7 +90,7 @@ Desde el 28 de septiembre de 2026 una queja nueva ya no pasa por el estatus `nue
 
 ## Versión de la app
 
-`assets/js/version.js` exporta `APP_VERSION`, un número de versión visible que se pinta en el pie de página de cada pantalla (incluyendo el login) vía `pintarPie()` en `auth-guard.js`. Sirve para que cualquiera — sobre todo Admin — pueda confirmar de un vistazo que ya tiene la versión más reciente desplegada. **Convención:** cada ronda de cambios que se entregue debe subir este número (minor para pantallas/funciones nuevas o cambiadas, patch para una corrección chica). Actual: `1.2.0`.
+`assets/js/version.js` exporta `APP_VERSION`, un número de versión visible que se pinta en el pie de página de cada pantalla (incluyendo el login) vía `pintarPie()` en `auth-guard.js`. Sirve para que cualquiera — sobre todo Admin — pueda confirmar de un vistazo que ya tiene la versión más reciente desplegada. **Convención:** cada ronda de cambios que se entregue debe subir este número (minor para pantallas/funciones nuevas o cambiadas, patch para una corrección chica). Actual: `1.3.0`.
 
 ## Ícono de la marca
 
@@ -100,11 +102,19 @@ El botón principal de cada pantalla (Comercial: "Nueva queja"; CEDIS: "Folio si
 
 ## Dictamen de Calidad: pop up
 
-La bandeja "Dictamen en proceso" de Calidad ya no muestra el formulario VEN-F-08 completo por cada queja: cada fila solo tiene "Ver detalles" y un botón "Iniciar dictamen". Al darle clic se abre un pop up (`#zx-modal-dictamen-fondo` en `calidad.html`, construido por `abrirModalDictamen` en `calidad.js`) con el formulario completo; Aceptado/Rechazado sigue llamando al mismo RPC `queja_dictamen`.
+La bandeja "Dictamen en proceso" de Calidad ya no muestra el formulario VEN-F-08 completo por cada queja: cada fila solo tiene "Ver detalles" y un botón "Iniciar dictamen". Al darle clic se abre un pop up (`#zx-modal-dictamen-fondo` en `calidad.html`, construido por `abrirModalDictamen` en `calidad.js`) con el formulario completo, más una sección de Adjuntos (opcional) con el mismo selector de archivos que usa Comercial — pensada para subir evidencia del dictamen (fotos del defecto, etc.). Al darle Aceptado/Rechazado, primero se llama al RPC `queja_dictamen` y, si el dictamen se guarda bien, se suben los archivos elegidos (si había alguno).
 
-## Adjuntos en Comercial
+## Campo nuevo "ID's" en Comercial
 
-El modal "Nueva queja" tiene un campo de archivos (`<input type="file" multiple>`) para adjuntar PDFs, fotos, video o cualquier tipo de archivo. Los archivos se suben a un bucket privado de Supabase Storage (`adjuntos-quejas`, `file_size_limit` de 15 MB por archivo) y en Postgres solo se guarda una referencia por archivo en la tabla `queja_adjuntos` (nombre, ruta, tipo, tamaño) — así los adjuntos no tocan el cupo de la base de datos, que es un cupo aparte del de Storage en el plan free de Supabase. Se ven y se descargan desde "Ver detalles" (con una URL firmada de 60 segundos, porque el bucket es privado), para cualquier rol, no solo Admin. Al eliminar una queja desde `admin.html`, el front borra primero sus archivos del bucket antes de llamar al RPC `queja_eliminar`, para no dejar archivos huérfanos ocupando espacio.
+El formulario "Nueva queja" tiene un campo de texto más, "ID's" (columna `quejas.ids`), junto a Código/Pedido/Lote/Factura. Es de texto libre y opcional, visible en "Ver detalles" para cualquier rol.
+
+## Adjuntos: selector reutilizable (Comercial y Calidad)
+
+El modal "Nueva queja" (Comercial) y el pop up del dictamen (Calidad, ver abajo) usan el mismo widget, `crearSelectorArchivos()` en `assets/js/selector-archivos.js`: un botón con el mismo estilo que el resto de los botones de la app (en vez del `<input type="file">` a secas de antes) que abre el explorador de archivos, más una lista de "chips" — uno por archivo elegido, con un ícono según el tipo (📄 PDF, 🖼️ imagen, 🎞️ video, 🎵 audio, 📝 Word, 📊 Excel/CSV, 🗜️ comprimido, 📎 cualquier otro), el nombre, el tamaño y un botón "✕" para quitarlo. A diferencia del `<input type="file">` nativo (que reemplaza toda la selección cada vez que se abre el explorador), este widget guarda los archivos en una lista propia: cada clic en "Elegir archivos" **agrega** a lo ya elegido en vez de reemplazarlo, así que se puede ir agregando uno por uno, o completar un archivo olvidado sin perder los demás, y quitar cualquiera antes de guardar.
+
+Los archivos se suben a un bucket privado de Supabase Storage (`adjuntos-quejas`, `file_size_limit` de 15 MB por archivo — el widget ya descarta al elegirlos los que pasen de ese tamaño) y en Postgres solo se guarda una referencia por archivo en la tabla `queja_adjuntos` (nombre, ruta, tipo, tamaño) — así los adjuntos no tocan el cupo de la base de datos, que es un cupo aparte del de Storage en el plan free de Supabase. La lógica de subida es compartida (`assets/js/adjuntos.js`, función `subirAdjuntos`), la usan tanto `comercial.js` como `calidad.js`. Se ven y se descargan desde "Ver detalles" (con una URL firmada de 60 segundos, porque el bucket es privado, y el mismo ícono por tipo de archivo), para cualquier rol, no solo Admin. Al eliminar una queja desde `admin.html`, el front borra primero sus archivos del bucket antes de llamar al RPC `queja_eliminar`, para no dejar archivos huérfanos ocupando espacio.
+
+Calidad también puede adjuntar archivos como evidencia al capturar el dictamen (pop up "Iniciar dictamen", ver abajo) — las políticas de Storage y de la tabla `queja_adjuntos` se ampliaron para permitir subir también al rol `calidad`, no solo a `comercial`/`admin` (el borrado sigue siendo solo de `admin`).
 
 ## CEDIS: popup de "Material recibido"
 

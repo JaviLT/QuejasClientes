@@ -5,4 +5,4 @@
 // pantalla) pueda confirmar de un vistazo que ya tiene la versión más reciente.
 //   - Sube el número de en medio (minor) cuando se agregan o cambian pantallas/funciones.
 //   - Sube el último número (patch) para una corrección chica que no cambia el comportamiento visible.
-export const APP_VERSION = '1.2.0';
+export const APP_VERSION = '1.3.0';
