@@ -1,6 +1,6 @@
 import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml, confirmarAccion } from './auth-guard.js';
-import { botonDetalle, activarBotonesDetalle, establecerRolActual, renderizarQuejasCerradas } from './detalle.js';
+import { botonDetalle, activarBotonesDetalle, establecerRolActual, pintarContadorQuejasCerradas } from './detalle.js';
 
 const sesion = await exigirSesion(['cedis']);
 if (sesion) {
@@ -44,7 +44,7 @@ async function cargarTodo() {
   await cargarEspera();
   await cargarPendientesDeEnvio();
   await cargarNc();
-  await renderizarQuejasCerradas('lista-cerradas-cedis', 'c-cerradas-cedis');
+  await pintarContadorQuejasCerradas('c-cerradas-cedis');
 }
 
 // ---------- Espera de recolección ----------

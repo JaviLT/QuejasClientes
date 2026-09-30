@@ -1,4 +1,12 @@
-// ZX · Procesos — modal compartido "Ver detalles" de una queja (datos + línea de tiempo + dictamen si existe).
+// ZX · Procesos — datos y HTML compartidos del detalle de una queja.
+//
+// Hasta la ronda anterior, "Ver detalles" abría un pop up construido por este mismo módulo.
+// Desde esta ronda (30 de septiembre de 2026, sexta del día) el detalle vive en su propia
+// página (detalle-queja.html?id=...), a petición del usuario — sobre todo para que los
+// adjuntos de la queja tengan más espacio. Este módulo ya no abre ningún modal: solo expone
+// los datos (obtenerDatosQueja) y el HTML del contenido (construirContenidoDetalle) para que
+// detalle-queja.js los pinte dentro de la página. botonDetalle() ahora genera un enlace normal
+// en vez de un botón con listener.
 import { supabase } from './supabase-client.js';
 import { escaparHtml } from './auth-guard.js';
 import { formatoTamano, iconoParaArchivo } from './adjuntos.js';
@@ -30,29 +38,11 @@ function dato(etiqueta, valor) {
   return `<div class="zx-detalle-dato"><span>${escaparHtml(etiqueta)}</span>${escaparHtml(valor || '—')}</div>`;
 }
 
-function cerrarModal() {
-  const fondo = document.getElementById('zx-detalle-fondo');
-  if (fondo) fondo.remove();
-  document.removeEventListener('keydown', escListener);
-}
-
-function escListener(evento) {
-  if (evento.key === 'Escape') cerrarModal();
-}
-
-/** Abre el modal de detalle para la queja con este id. Se puede llamar desde cualquier pantalla. */
-export async function abrirDetalleQueja(id) {
-  const previo = document.getElementById('zx-detalle-fondo');
-  if (previo) previo.remove();
-
-  const fondo = document.createElement('div');
-  fondo.id = 'zx-detalle-fondo';
-  fondo.className = 'zx-modal-fondo';
-  fondo.innerHTML = `<div class="zx-modal"><p class="zx-vacio">Cargando detalle…</p></div>`;
-  document.body.appendChild(fondo);
-  fondo.addEventListener('click', (evento) => { if (evento.target === fondo) cerrarModal(); });
-  document.addEventListener('keydown', escListener);
-
+/** Trae todo lo necesario para pintar el detalle de una queja: la queja misma, su línea de
+ * tiempo, el dictamen (con equipo/medidas si existe), la recolección y los adjuntos. Se usa
+ * desde detalle-queja.js; separado de construirContenidoDetalle para poder, si hace falta más
+ * adelante, reusar los datos sin volver a pintar HTML (o al revés). */
+export async function obtenerDatosQueja(id) {
   const [{ data: q, error: errQ }, { data: tempos }, { data: dictamenes }, { data: recolecciones }, { data: adjuntos }] = await Promise.all([
     supabase.from('quejas')
       .select('*, catalogo_estados(etiqueta), catalogo_tipos_queja(etiqueta), profiles!quejas_creada_por_fkey(nombre_completo)')
@@ -65,11 +55,7 @@ export async function abrirDetalleQueja(id) {
   ]);
 
   if (errQ || !q) {
-    fondo.querySelector('.zx-modal').innerHTML = `
-      <div class="zx-modal-cabecera"><h2>No se pudo cargar</h2><button class="zx-modal-cerrar" data-cerrar>✕</button></div>
-      <p class="zx-vacio">${escaparHtml(errQ?.message || 'La queja no existe o ya no está disponible.')}</p>`;
-    fondo.querySelector('[data-cerrar]').addEventListener('click', cerrarModal);
-    return;
+    return { error: errQ?.message || 'La queja no existe o ya no está disponible.' };
   }
 
   let equipo = [];
@@ -82,6 +68,14 @@ export async function abrirDetalleQueja(id) {
     equipo = eq || [];
     medidas = med || [];
   }
+
+  return { q, tempos: tempos || [], dictamenes, equipo, medidas, recolecciones, adjuntos: adjuntos || [] };
+}
+
+/** Construye el HTML completo del detalle (título, estado, datos generales, D2, dictamen,
+ * recolección, adjuntos y línea de tiempo) a partir de lo que devuelve obtenerDatosQueja(). */
+export function construirContenidoDetalle(datos) {
+  const { q, tempos, dictamenes, equipo, medidas, recolecciones, adjuntos } = datos;
 
   // Los tiempos son información exclusiva de Admin: solo Admin ve la fecha/hora de cada etapa.
   // El resto de los roles ve la lista de etapas ya pasadas, pero sin ninguna fecha junto a ellas.
@@ -112,17 +106,18 @@ export async function abrirDetalleQueja(id) {
       ${dictamenes.conclusion ? `<p><strong>Conclusión:</strong> ${escaparHtml(dictamenes.conclusion)}</p>` : ''}
     </div>` : '';
 
-  const bloqueAdjuntos = (adjuntos && adjuntos.length > 0) ? `
+  const bloqueAdjuntos = `
     <div class="zx-detalle-seccion">
       <h3>Adjuntos <span class="zx-contador">${adjuntos.length}</span></h3>
+      ${adjuntos.length > 0 ? `
       <div class="zx-lista-adjuntos">
         ${adjuntos.map((a) => `
           <div class="zx-fila-adjunto">
             <span><span aria-hidden="true">${iconoParaArchivo(a.tipo_mime, a.nombre_archivo)}</span> ${escaparHtml(a.nombre_archivo)}${a.tamanio_bytes ? ` <span class="zx-lt-meta">(${formatoTamano(a.tamanio_bytes)})</span>` : ''}</span>
             <button type="button" class="zx-btn zx-btn-secundario zx-btn-sm" data-descargar-adjunto="${escaparHtml(a.ruta_storage)}">Descargar</button>
           </div>`).join('')}
-      </div>
-    </div>` : '';
+      </div>` : '<p class="zx-vacio">Esta queja no tiene archivos adjuntos.</p>'}
+    </div>`;
 
   const bloqueRecoleccion = recolecciones ? `
     <div class="zx-detalle-seccion">
@@ -136,12 +131,8 @@ export async function abrirDetalleQueja(id) {
       </div>
     </div>` : '';
 
-  fondo.querySelector('.zx-modal').innerHTML = `
-    <div class="zx-modal-cabecera">
-      <h2>${escaparHtml(q.folio)} · ${escaparHtml(q.cliente)}</h2>
-      <button class="zx-modal-cerrar" data-cerrar>✕</button>
-    </div>
-    <span class="zx-detalle-estado">${escaparHtml(q.catalogo_estados?.etiqueta || q.estado)}</span>
+  return `
+    <h2>${escaparHtml(q.folio)} · ${escaparHtml(q.cliente)} <span class="zx-detalle-estado">${escaparHtml(q.catalogo_estados?.etiqueta || q.estado)}</span></h2>
 
     <div class="zx-detalle-grid">
       ${dato('Tipo de queja', q.catalogo_tipos_queja?.etiqueta || q.tipo_queja)}
@@ -177,8 +168,12 @@ export async function abrirDetalleQueja(id) {
       <div class="zx-linea-tiempo">${lineaTiempo}</div>
     </div>
   `;
-  fondo.querySelector('[data-cerrar]').addEventListener('click', cerrarModal);
-  fondo.querySelectorAll('[data-descargar-adjunto]').forEach((btn) => {
+}
+
+/** Engancha el botón "Descargar" de cada adjunto pintado por construirContenidoDetalle(). Llamar
+ * una vez después de insertar ese HTML en la página. */
+export function activarDescargasAdjuntos(contenedor) {
+  contenedor.querySelectorAll('[data-descargar-adjunto]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const ruta = btn.getAttribute('data-descargar-adjunto');
       btn.disabled = true;
@@ -196,63 +191,34 @@ export async function abrirDetalleQueja(id) {
   });
 }
 
-/** Genera el botón "Ver detalles" ya con su atributo data-id, listo para insertarse en cualquier fila. */
+/** Genera el enlace "Ver detalles" que lleva a la página detalle-queja.html?id=... — ya no abre
+ * ningún pop up. Se ve y se usa igual que el botón de siempre porque comparte la clase .zx-btn. */
 export function botonDetalle(id) {
-  return `<button type="button" class="zx-btn zx-btn-detalle zx-btn-sm" data-ver-detalle="${id}">Ver detalles</button>`;
+  return `<a href="detalle-queja.html?id=${encodeURIComponent(id)}" class="zx-btn zx-btn-detalle zx-btn-sm">Ver detalles</a>`;
 }
 
-/** Delega el click de todos los botones "Ver detalles" dentro de un contenedor. Llamar después de pintar filas. */
+/** Ya no hace falta: botonDetalle() ahora es un enlace normal, no un botón con listener. Se deja
+ * como función vacía (en vez de quitar la llamada de cada pantalla) para no tener que tocar
+ * todos los lugares que todavía la invocan después de pintar sus filas. */
 export function activarBotonesDetalle(contenedor) {
-  contenedor.querySelectorAll('[data-ver-detalle]').forEach((btn) => {
-    btn.addEventListener('click', () => abrirDetalleQueja(btn.getAttribute('data-ver-detalle')));
-  });
+  // sin efecto — ver comentario arriba.
 }
 
 // Lista de estados que se consideran "cerrados" (ya no están en proceso): aceptadas al final
-// (cerrada) o rechazadas en cualquiera de las etapas donde eso es posible. admin.js define esta
-// misma lista de forma local porque la usa para más cosas (tiempos, eliminar); aquí se exporta
-// para que Comercial, Calidad y CEDIS puedan reusarla sin duplicarla.
+// (cerrada) o rechazadas en cualquiera de las etapas donde eso es posible. admin.js y
+// quejas-cerradas.js importan esta misma constante en vez de tener cada uno su propia copia.
 export const ESTADOS_TERMINALES = ['cerrada', 'rechazada_calidad', 'rechazada_dictamen', 'rechazada_revision', 'rechazada_nc'];
 
-/** Carga y pinta, en cualquier pantalla, la bandeja de "Quejas cerradas": todas las quejas ya
- * resueltas (aceptadas o rechazadas en cualquier etapa), sin importar quién la creó ni qué rol
- * participó en ella — a diferencia de "Mis quejas" en Comercial, aquí se ven las de todos.
- * Solo incluye el botón "Ver detalles"; las acciones de tiempos/eliminar siguen siendo
- * exclusivas de Admin (ver admin.js). Pensada para usarse igual en Comercial, Calidad y CEDIS. */
-export async function renderizarQuejasCerradas(contenedorId, contadorId) {
-  const contenedor = document.getElementById(contenedorId);
-  const contador = document.getElementById(contadorId);
-
-  const { data, error } = await supabase
+/** Pinta solo el número de quejas cerradas (sin la lista) en el contador de la tarjeta-enlace
+ * que llevan a quejas-cerradas.html. Antes esta bandeja se pintaba completa dentro de cada
+ * pantalla (Comercial/Calidad/CEDIS); desde esta ronda esa lista vive en su propia página, así
+ * que aquí solo hace falta un conteo, no traer y pintar cada fila. */
+export async function pintarContadorQuejasCerradas(contadorId) {
+  const el = document.getElementById(contadorId);
+  if (!el) return;
+  const { count, error } = await supabase
     .from('quejas')
-    .select('id, folio, cliente, tipo_queja, estado, creada_en, catalogo_estados(etiqueta)')
-    .in('estado', ESTADOS_TERMINALES)
-    .order('creada_en', { ascending: false })
-    .limit(50);
-
-  if (error) {
-    contenedor.innerHTML = `<p class="zx-vacio">${escaparHtml(error.message)}</p>`;
-    return;
-  }
-
-  contador.textContent = data.length;
-
-  if (data.length === 0) {
-    contenedor.innerHTML = '<p class="zx-vacio">No hay quejas cerradas.</p>';
-    return;
-  }
-
-  contenedor.innerHTML = data.map((q) => `
-    <div class="zx-fila">
-      <div class="zx-fila-info">
-        <span class="zx-fila-folio">${escaparHtml(q.folio)} · ${escaparHtml(q.cliente)}</span>
-        <span class="zx-fila-meta">${escaparHtml(q.tipo_queja || 'Sin tipo')} · ${new Date(q.creada_en).toLocaleString('es-MX')}</span>
-      </div>
-      <div class="zx-fila-acciones">
-        <span class="zx-contador">${escaparHtml(q.catalogo_estados?.etiqueta || q.estado)}</span>
-        ${botonDetalle(q.id)}
-      </div>
-    </div>
-  `).join('');
-  activarBotonesDetalle(contenedor);
+    .select('id', { count: 'exact', head: true })
+    .in('estado', ESTADOS_TERMINALES);
+  el.textContent = error ? '—' : (count ?? 0);
 }

@@ -1,6 +1,6 @@
 import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml } from './auth-guard.js';
-import { botonDetalle, activarBotonesDetalle, establecerRolActual, renderizarQuejasCerradas } from './detalle.js';
+import { botonDetalle, activarBotonesDetalle, establecerRolActual, pintarContadorQuejasCerradas } from './detalle.js';
 import { subirAdjuntos } from './adjuntos.js';
 import { crearSelectorArchivos } from './selector-archivos.js';
 
@@ -12,7 +12,7 @@ if (sesion) {
   });
   await cargarCatalogoTiposQueja();
   await cargarMisQuejas();
-  await renderizarQuejasCerradas('zx-lista-quejas-cerradas', 'zx-contador-quejas-cerradas');
+  await pintarContadorQuejasCerradas('zx-contador-quejas-cerradas');
   escucharCambiosEnVivo();
 
   const modalFondo = document.getElementById('zx-modal-nueva-fondo');
@@ -173,7 +173,7 @@ function escucharCambiosEnVivo() {
     .channel('comercial-quejas')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'quejas' }, () => {
       cargarMisQuejas();
-      renderizarQuejasCerradas('zx-lista-quejas-cerradas', 'zx-contador-quejas-cerradas');
+      pintarContadorQuejasCerradas('zx-contador-quejas-cerradas');
     })
     .subscribe();
 }

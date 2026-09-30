@@ -1,14 +1,26 @@
+// ZX · Procesos — página con todas las quejas cerradas de la empresa (antes vivía como una
+// bandeja más dentro de cada pantalla de Comercial/Calidad/CEDIS/Admin; desde el 30 de
+// septiembre de 2026, sexta ronda del día, es una página aparte, enlazada desde las cuatro).
 import { supabase } from './supabase-client.js';
-import { exigirSesion, pintarEncabezado, escaparHtml } from './auth-guard.js';
-import { formatoDuracionFija, iniciarActualizacionFija } from './tiempo.js';
+import { exigirSesion, pintarEncabezado, escaparHtml, confirmarAccion } from './auth-guard.js';
+import { formatoDuracionFija } from './tiempo.js';
 import { botonDetalle, activarBotonesDetalle, establecerRolActual, ESTADOS_TERMINALES } from './detalle.js';
 
-const sesion = await exigirSesion(['admin']);
+const TODOS_LOS_ROLES = ['comercial', 'calidad', 'cedis', 'admin'];
+let esAdmin = false;
+
+const sesion = await exigirSesion(TODOS_LOS_ROLES);
 if (sesion) {
+  esAdmin = sesion.perfil.rol === 'admin';
   establecerRolActual(sesion.perfil.rol);
-  pintarEncabezado(sesion.perfil, 'Administrador');
-  await cargarTodo();
-  iniciarActualizacionFija();
+  pintarEncabezado(sesion.perfil, 'Quejas cerradas');
+
+  document.getElementById('zx-btn-volver').addEventListener('click', (evento) => {
+    evento.preventDefault();
+    history.back();
+  });
+
+  await cargarQuejasCerradas();
   escucharCambiosEnVivo();
 }
 
@@ -20,43 +32,50 @@ function mostrarMensaje(texto, ok) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-async function cargarTodo() {
-  await cargarQuejas();
-}
-
-// ---------- Todas las quejas, separadas en abiertas / cerradas ----------
-async function cargarQuejas() {
+// Todas las quejas cerradas de la empresa, sin filtrar por quién la creó ni por rol — mismo
+// alcance que ya se había confirmado con el usuario para la bandeja que reemplaza esta página.
+async function cargarQuejasCerradas() {
   const { data, error } = await supabase
     .from('quejas')
-    .select('id, folio, cliente, tipo_queja, estado, creada_en, tempo_activo_desde, tempo_label_activo, catalogo_estados(etiqueta)')
+    .select('id, folio, cliente, tipo_queja, estado, creada_en, catalogo_estados(etiqueta)')
+    .in('estado', ESTADOS_TERMINALES)
     .order('creada_en', { ascending: false });
 
+  const contenedor = document.getElementById('lista-cerradas-todas');
   if (error) {
-    document.getElementById('lista-abiertas').innerHTML = `<p class="zx-vacio">${escaparHtml(error.message)}</p>`;
+    contenedor.innerHTML = `<p class="zx-vacio">${escaparHtml(error.message)}</p>`;
+    return;
+  }
+  document.getElementById('c-cerradas-todas').textContent = data.length;
+
+  if (data.length === 0) {
+    contenedor.innerHTML = '<p class="zx-vacio">No hay quejas cerradas.</p>';
     return;
   }
 
-  const abiertas = data.filter((q) => !ESTADOS_TERMINALES.includes(q.estado));
-  const cerradas = data.filter((q) => ESTADOS_TERMINALES.includes(q.estado));
-
-  pintarLista('lista-abiertas', 'c-abiertas', abiertas, 'No hay quejas abiertas.');
-  // "Quejas cerradas" ya no se pinta aquí: desde esta ronda vive en quejas-cerradas.html (junto
-  // con Comercial/Calidad/CEDIS), y esta pantalla solo enlaza ahí. El conteo sale gratis del
-  // mismo query de arriba, sin pedirlo aparte.
-  document.getElementById('c-cerradas-enlace').textContent = cerradas.length;
-}
-
-function pintarLista(contenedorId, contadorId, quejas, textoVacio) {
-  const contenedor = document.getElementById(contenedorId);
-  document.getElementById(contadorId).textContent = quejas.length;
-
-  if (quejas.length === 0) {
-    contenedor.innerHTML = `<p class="zx-vacio">${textoVacio}</p>`;
+  if (!esAdmin) {
+    // Comercial, Calidad y CEDIS: fila simple, de solo lectura — solo "Ver detalles".
+    contenedor.innerHTML = data.map((q) => `
+      <div class="zx-fila">
+        <div class="zx-fila-info">
+          <span class="zx-fila-folio">${escaparHtml(q.folio)} · ${escaparHtml(q.cliente)}</span>
+          <span class="zx-fila-meta">${escaparHtml(q.tipo_queja || 'Sin tipo')} · ${new Date(q.creada_en).toLocaleString('es-MX')}</span>
+        </div>
+        <div class="zx-fila-acciones">
+          <span class="zx-contador">${escaparHtml(q.catalogo_estados?.etiqueta || q.estado)}</span>
+          ${botonDetalle(q.id)}
+        </div>
+      </div>
+    `).join('');
+    activarBotonesDetalle(contenedor);
     return;
   }
 
-  contenedor.innerHTML = quejas.map((q) => `
-    <div class="zx-fila-expandible" data-id="${q.id}" data-estado="${escaparHtml(q.estado)}" data-desde-activo="${q.tempo_activo_desde || ''}" data-etiqueta-activa="${escaparHtml(q.tempo_label_activo || '')}">
+  // Admin: misma fila expandible con "Ver tiempos" + "Eliminar" que ya tenía su propia tarjeta
+  // "Quejas cerradas" en admin.html (ver HANDOFF/FRONTEND.md) — ahora vive aquí, en la página
+  // compartida con Comercial/Calidad/CEDIS, para no mantener dos listas de lo mismo.
+  contenedor.innerHTML = data.map((q) => `
+    <div class="zx-fila-expandible" data-id="${q.id}">
       <div class="zx-fila">
         <div class="zx-fila-info">
           <span class="zx-fila-folio">${escaparHtml(q.folio)} · ${escaparHtml(q.cliente)}</span>
@@ -90,19 +109,19 @@ function pintarLista(contenedorId, contadorId, quejas, textoVacio) {
       evento.currentTarget.textContent = 'Ocultar tiempos';
       if (!panel.getAttribute('data-cargado')) {
         panel.setAttribute('data-cargado', '1');
-        await cargarTiemposDeQueja(id, panel, fila);
+        await cargarTiemposDeQueja(id, panel);
       }
     });
 
     fila.querySelector('[data-accion="eliminar"]').addEventListener('click', async (evento) => {
       const btn = evento.currentTarget;
       const folio = fila.querySelector('.zx-fila-folio').textContent;
-      if (!confirm(`¿Eliminar definitivamente ${folio}? Esta acción no se puede deshacer.`)) return;
+      if (!confirmarAccion(`¿Eliminar definitivamente ${folio}? Esta acción no se puede deshacer.`)) return;
       btn.disabled = true;
 
-      // Antes de borrar la queja, borra sus archivos adjuntos del bucket de Storage — si no,
-      // el borrado en cascada solo quita el renglón de queja_adjuntos y el archivo se queda
-      // huérfano ocupando espacio de Storage para siempre.
+      // Igual que en admin.js: borrar primero los adjuntos del bucket de Storage, para no dejar
+      // archivos huérfanos (el borrado en cascada de la fila de queja_adjuntos no borra el
+      // archivo físico).
       const { data: adjuntos } = await supabase.from('queja_adjuntos').select('ruta_storage').eq('queja_id', id);
       if (adjuntos && adjuntos.length > 0) {
         await supabase.storage.from('adjuntos-quejas').remove(adjuntos.map((a) => a.ruta_storage));
@@ -115,16 +134,17 @@ function pintarLista(contenedorId, contadorId, quejas, textoVacio) {
         return;
       }
       mostrarMensaje(`${folio} eliminada.`, true);
-      await cargarQuejas();
+      await cargarQuejasCerradas();
     });
   });
 }
 
-/** Carga y pinta, dentro del panel desplegable de una queja, la duración fija de cada etapa cerrada y (si aplica) la etapa actual. */
-async function cargarTiemposDeQueja(id, panel, fila) {
+/** Duración fija de cada etapa ya cerrada (sin "etapa actual": todas las quejas de esta página
+ * ya están cerradas, a diferencia de la lista de "Quejas abiertas" de admin.js). */
+async function cargarTiemposDeQueja(id, panel) {
   const { data: tempos, error } = await supabase
     .from('tempos')
-    .select('etiqueta, inicio, fin, duracion_ms, resultado')
+    .select('etiqueta, duracion_ms, resultado')
     .eq('queja_id', id)
     .order('creado_en', { ascending: true });
 
@@ -142,24 +162,12 @@ async function cargarTiemposDeQueja(id, panel, fila) {
       </div>
     </div>`).join('') || '<p class="zx-vacio">Todavía no hay etapas cerradas.</p>';
 
-  const estado = fila.getAttribute('data-estado');
-  const desdeActivo = fila.getAttribute('data-desde-activo');
-  const etiquetaActiva = fila.getAttribute('data-etiqueta-activa');
-  const esTerminal = ESTADOS_TERMINALES.includes(estado);
-
-  const etapaActual = (!esTerminal && desdeActivo) ? `
-    <div class="zx-etapa-actual">
-      <span>Etapa actual: <strong>${escaparHtml(etiquetaActiva || '—')}</strong></span>
-      <span class="zx-cronometro" data-desde="${desdeActivo}">${formatoDuracionFija(Date.now() - new Date(desdeActivo).getTime())}</span>
-    </div>` : '';
-
-  panel.innerHTML = `<div class="zx-linea-tiempo">${lineaTiempo}</div>${etapaActual}`;
+  panel.innerHTML = `<div class="zx-linea-tiempo">${lineaTiempo}</div>`;
 }
 
 function escucharCambiosEnVivo() {
   supabase
-    .channel('admin-cambios')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'quejas' }, () => cargarTodo())
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'tempos' }, () => cargarTodo())
+    .channel('quejas-cerradas')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'quejas' }, () => cargarQuejasCerradas())
     .subscribe();
 }

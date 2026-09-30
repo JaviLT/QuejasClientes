@@ -1,6 +1,6 @@
 import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml, confirmarAccion } from './auth-guard.js';
-import { botonDetalle, activarBotonesDetalle, establecerRolActual, renderizarQuejasCerradas } from './detalle.js';
+import { botonDetalle, activarBotonesDetalle, establecerRolActual, pintarContadorQuejasCerradas } from './detalle.js';
 import { subirAdjuntos } from './adjuntos.js';
 import { crearSelectorArchivos } from './selector-archivos.js';
 
@@ -379,7 +379,7 @@ async function cargarTodo() {
     <button class="zx-btn zx-btn-secundario zx-btn-sm" data-accion="material_recibido">Material recibido</button>
   `);
   await renderizarConTexto('lista-revision', 'c-revision', 'revision_pendiente', 'queja_revision', 'Texto de la revisión');
-  await renderizarQuejasCerradas('lista-cerradas-calidad', 'c-cerradas-calidad');
+  await pintarContadorQuejasCerradas('c-cerradas-calidad');
 }
 
 function escucharCambiosEnVivo() {
