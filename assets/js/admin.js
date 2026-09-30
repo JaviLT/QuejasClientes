@@ -1,9 +1,7 @@
 import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml } from './auth-guard.js';
 import { formatoDuracionFija, iniciarActualizacionFija } from './tiempo.js';
-import { botonDetalle, activarBotonesDetalle, establecerRolActual } from './detalle.js';
-
-const ESTADOS_TERMINALES = ['cerrada', 'rechazada_calidad', 'rechazada_dictamen', 'rechazada_revision', 'rechazada_nc'];
+import { botonDetalle, activarBotonesDetalle, establecerRolActual, ESTADOS_TERMINALES } from './detalle.js';
 
 const sesion = await exigirSesion(['admin']);
 if (sesion) {

@@ -207,3 +207,52 @@ export function activarBotonesDetalle(contenedor) {
     btn.addEventListener('click', () => abrirDetalleQueja(btn.getAttribute('data-ver-detalle')));
   });
 }
+
+// Lista de estados que se consideran "cerrados" (ya no están en proceso): aceptadas al final
+// (cerrada) o rechazadas en cualquiera de las etapas donde eso es posible. admin.js define esta
+// misma lista de forma local porque la usa para más cosas (tiempos, eliminar); aquí se exporta
+// para que Comercial, Calidad y CEDIS puedan reusarla sin duplicarla.
+export const ESTADOS_TERMINALES = ['cerrada', 'rechazada_calidad', 'rechazada_dictamen', 'rechazada_revision', 'rechazada_nc'];
+
+/** Carga y pinta, en cualquier pantalla, la bandeja de "Quejas cerradas": todas las quejas ya
+ * resueltas (aceptadas o rechazadas en cualquier etapa), sin importar quién la creó ni qué rol
+ * participó en ella — a diferencia de "Mis quejas" en Comercial, aquí se ven las de todos.
+ * Solo incluye el botón "Ver detalles"; las acciones de tiempos/eliminar siguen siendo
+ * exclusivas de Admin (ver admin.js). Pensada para usarse igual en Comercial, Calidad y CEDIS. */
+export async function renderizarQuejasCerradas(contenedorId, contadorId) {
+  const contenedor = document.getElementById(contenedorId);
+  const contador = document.getElementById(contadorId);
+
+  const { data, error } = await supabase
+    .from('quejas')
+    .select('id, folio, cliente, tipo_queja, estado, creada_en, catalogo_estados(etiqueta)')
+    .in('estado', ESTADOS_TERMINALES)
+    .order('creada_en', { ascending: false })
+    .limit(50);
+
+  if (error) {
+    contenedor.innerHTML = `<p class="zx-vacio">${escaparHtml(error.message)}</p>`;
+    return;
+  }
+
+  contador.textContent = data.length;
+
+  if (data.length === 0) {
+    contenedor.innerHTML = '<p class="zx-vacio">No hay quejas cerradas.</p>';
+    return;
+  }
+
+  contenedor.innerHTML = data.map((q) => `
+    <div class="zx-fila">
+      <div class="zx-fila-info">
+        <span class="zx-fila-folio">${escaparHtml(q.folio)} · ${escaparHtml(q.cliente)}</span>
+        <span class="zx-fila-meta">${escaparHtml(q.tipo_queja || 'Sin tipo')} · ${new Date(q.creada_en).toLocaleString('es-MX')}</span>
+      </div>
+      <div class="zx-fila-acciones">
+        <span class="zx-contador">${escaparHtml(q.catalogo_estados?.etiqueta || q.estado)}</span>
+        ${botonDetalle(q.id)}
+      </div>
+    </div>
+  `).join('');
+  activarBotonesDetalle(contenedor);
+}

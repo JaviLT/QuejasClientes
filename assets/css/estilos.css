@@ -62,9 +62,9 @@ a { color: var(--zx-secundario); }
   box-shadow: 0 2px 10px rgba(13, 24, 168, 0.18);
 }
 .zx-header-inner {
-  max-width: 1100px;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 14px 20px;
+  padding: 14px clamp(16px, 3vw, 40px);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -179,9 +179,9 @@ a { color: var(--zx-secundario); }
 
 /* ---------- Contenedor general ---------- */
 .zx-contenedor {
-  max-width: 1100px;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 24px 20px 60px;
+  padding: 24px clamp(16px, 3vw, 40px) 60px;
 }
 
 .zx-tarjeta {
@@ -534,3 +534,38 @@ footer.zx-pie {
   white-space: nowrap;
 }
 .zx-chip-tamano { color: var(--zx-texto-suave); font-size: 0.78rem; flex: none; }
+
+/* ---------- Responsivo (30 de septiembre de 2026, cuarta ronda del día) ----------
+   Antes, .zx-header-inner y .zx-contenedor tenían un max-width fijo de 1100px,
+   así que en monitores anchos quedaba mucho espacio vacío a los lados. Ahora
+   usan hasta 1600px (ver arriba) para aprovechar mejor las pantallas grandes,
+   y aquí se ajusta la vista para pantallas angostas (tablet/celular), donde antes
+   no había ningún @media: las filas de las bandejas, las filas repetibles del
+   dictamen y los pop ups se reacomodan en vez de solo achicarse. */
+@media (max-width: 720px) {
+  .zx-tarjeta { padding: 16px 16px; }
+  .zx-fila {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .zx-fila-acciones {
+    justify-content: flex-start;
+  }
+  .zx-fila-acciones .zx-btn {
+    flex: 1 1 auto;
+  }
+  .zx-modal-fondo { padding: 20px 8px; }
+  .zx-modal { padding: 20px 18px 22px; }
+  .zx-subtabla-fila,
+  .zx-subtabla-fila.zx-subtabla-3 {
+    grid-template-columns: 1fr;
+  }
+  .zx-btn-quitar-fila { justify-self: flex-end; }
+}
+
+@media (max-width: 480px) {
+  .zx-header-titulo { font-size: 0.95rem; }
+  .zx-btn-usuario { align-items: center; }
+  .zx-login-tarjeta { padding: 28px 22px; }
+}
