@@ -1,7 +1,7 @@
 import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml } from './auth-guard.js';
 import { formatoDuracionFija, iniciarActualizacionFija } from './tiempo.js';
-import { enlaceDetalle, establecerRolActual, ESTADOS_TERMINALES } from './detalle.js';
+import { tituloQueja, botonDetalle, establecerRolActual, ESTADOS_TERMINALES } from './detalle.js';
 
 const sesion = await exigirSesion(['admin']);
 if (sesion) {
@@ -57,10 +57,11 @@ function pintarLista(contenedorId, contadorId, quejas, textoVacio) {
     <div class="zx-fila-expandible" data-id="${q.id}" data-estado="${escaparHtml(q.estado)}" data-desde-activo="${q.tempo_activo_desde || ''}" data-etiqueta-activa="${escaparHtml(q.tempo_label_activo || '')}">
       <div class="zx-fila">
         <div class="zx-fila-info">
-          ${enlaceDetalle(q.id, q.folio, q.cliente)}
+          ${tituloQueja(q.folio, q.cliente)}
           <span class="zx-fila-meta">${escaparHtml(q.tipo_queja || 'Sin tipo')} · ${escaparHtml(q.catalogo_estados?.etiqueta || q.estado)} · ${new Date(q.creada_en).toLocaleString('es-MX')}</span>
         </div>
         <div class="zx-fila-acciones">
+          ${botonDetalle(q.id)}
           <button type="button" class="zx-btn-expandir" data-accion="expandir">Ver tiempos</button>
           <button type="button" class="zx-btn zx-btn-peligro zx-btn-sm" data-accion="eliminar">Eliminar</button>
         </div>

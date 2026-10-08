@@ -1,6 +1,6 @@
 import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml } from './auth-guard.js';
-import { enlaceDetalle, establecerRolActual, ESTADOS_TERMINALES } from './detalle.js';
+import { tituloQueja, botonDetalle, establecerRolActual, ESTADOS_TERMINALES } from './detalle.js';
 import { subirAdjuntos } from './adjuntos.js';
 import { crearSelectorArchivos } from './selector-archivos.js';
 
@@ -161,10 +161,11 @@ async function cargarMisQuejas() {
   lista.innerHTML = data.map((q) => `
     <div class="zx-fila">
       <div class="zx-fila-info">
-        ${enlaceDetalle(q.id, q.folio, q.cliente)}
+        ${tituloQueja(q.folio, q.cliente)}
         <span class="zx-fila-meta">${escaparHtml(q.tipo_queja)} · ${new Date(q.creada_en).toLocaleString('es-MX')}</span>
       </div>
       <div class="zx-fila-acciones">
+        ${botonDetalle(q.id)}
         <span class="zx-contador">${escaparHtml(q.catalogo_estados?.etiqueta || q.estado)}</span>
       </div>
     </div>

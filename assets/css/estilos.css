@@ -272,10 +272,10 @@ a { color: var(--zx-secundario); }
 .zx-fila:last-child { border-bottom: none; }
 .zx-fila-info { display: flex; flex-direction: column; gap: 3px; }
 .zx-fila-folio { font-weight: 700; color: var(--zx-primario); }
-/* El título de cada fila (folio · cliente) es el enlace a su detalle desde esta ronda (30 de
-   septiembre de 2026, séptima del día) — ya no hay un botón "Ver detalles" aparte. */
-a.zx-fila-folio { text-decoration: none; cursor: pointer; }
-a.zx-fila-folio:hover { text-decoration: underline; }
+/* Ronda 8 (8 de octubre de 2026): el botón "Ver detalles" vuelve a cada fila y el título
+   (folio · cliente) es otra vez texto simple. */
+.zx-btn-detalle { background: transparent; border: 1px solid var(--zx-borde); color: var(--zx-texto-suave); }
+.zx-btn-detalle:hover { border-color: var(--zx-secundario); color: var(--zx-secundario); }
 .zx-fila-meta { font-size: 0.82rem; color: var(--zx-texto-suave); }
 .zx-fila-acciones { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 

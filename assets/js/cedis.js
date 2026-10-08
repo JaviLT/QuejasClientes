@@ -1,6 +1,6 @@
 import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml, confirmarAccion } from './auth-guard.js';
-import { enlaceDetalle, establecerRolActual } from './detalle.js';
+import { tituloQueja, botonDetalle, establecerRolActual } from './detalle.js';
 
 const sesion = await exigirSesion(['cedis']);
 if (sesion) {
@@ -69,10 +69,11 @@ async function cargarEspera() {
   contenedor.innerHTML = data.map((q) => `
     <div class="zx-fila">
       <div class="zx-fila-info">
-        ${enlaceDetalle(q.id, q.folio, q.cliente)}
+        ${tituloQueja(q.folio, q.cliente)}
         <span class="zx-fila-meta">${escaparHtml(q.tipo_queja || 'Sin tipo')}</span>
       </div>
       <div class="zx-fila-acciones">
+        ${botonDetalle(q.id)}
         <button class="zx-btn zx-btn-secundario zx-btn-sm" data-id="${q.id}" data-accion="material-recibido">Material recibido (generar folio)</button>
       </div>
     </div>
@@ -238,10 +239,11 @@ async function cargarNc() {
   contenedor.innerHTML = data.map((q) => `
     <div class="zx-fila" data-id="${q.id}">
       <div class="zx-fila-info">
-        ${enlaceDetalle(q.id, q.folio, q.cliente)}
+        ${tituloQueja(q.folio, q.cliente)}
         <span class="zx-fila-meta">${escaparHtml(q.tipo_queja || 'Sin tipo')}</span>
       </div>
       <div class="zx-fila-acciones">
+        ${botonDetalle(q.id)}
         <button class="zx-btn zx-btn-exito zx-btn-sm" data-accion="aceptar">Aceptar NC</button>
         <button class="zx-btn zx-btn-peligro zx-btn-sm" data-accion="rechazar">Rechazar NC</button>
       </div>

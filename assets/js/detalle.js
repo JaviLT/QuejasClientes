@@ -5,9 +5,8 @@
 // módulo expone los datos (obtenerDatosQueja) y el HTML del contenido (construirContenidoDetalle)
 // para que detalle-queja.js los pinte dentro de la página.
 //
-// Desde esta ronda (30 de septiembre de 2026, séptima del día): ya no hay un botón "Ver
-// detalles" aparte — el título de cada fila (folio · cliente) ya es el enlace (enlaceDetalle).
-// Y los adjuntos se ven distinto según el tipo: las imágenes se muestran completas (sin recortar)
+// Ronda 8 (8 de octubre de 2026): el botón "Ver detalles" volvió a cada fila (botonDetalle) y el
+// título (folio · cliente) es otra vez texto simple (tituloQueja). Los adjuntos se ven distinto según el tipo: las imágenes se muestran completas (sin recortar)
 // y el resto (PDF, video, etc.) muestra su ícono — en ambos casos con un botón de descarga
 // individual por archivo (activarAdjuntos).
 import { supabase } from './supabase-client.js';
@@ -224,11 +223,16 @@ export function activarAdjuntos(contenedor) {
   });
 }
 
-/** Genera el título de una fila (folio · cliente) como enlace directo a detalle-queja.html?id=...
- * — desde esta ronda (30 de septiembre de 2026, séptima del día) ya no hay un botón "Ver
- * detalles" aparte: se le da clic al título. */
-export function enlaceDetalle(id, folio, cliente) {
-  return `<a href="detalle-queja.html?id=${encodeURIComponent(id)}" class="zx-fila-folio">${escaparHtml(folio)} · ${escaparHtml(cliente)}</a>`;
+/** Título de una fila (folio · cliente) como texto simple. Desde la ronda 8 (8 de octubre de
+ * 2026) el título vuelve a ser solo texto — para abrir el detalle se usa botonDetalle(). */
+export function tituloQueja(folio, cliente) {
+  return `<span class="zx-fila-folio">${escaparHtml(folio)} · ${escaparHtml(cliente)}</span>`;
+}
+
+/** Botón "Ver detalles": enlace con aspecto de botón a detalle-queja.html?id=... Va dentro de
+ * .zx-fila-acciones en cada fila de queja (Comercial, Calidad, CEDIS, Admin, Quejas cerradas). */
+export function botonDetalle(id) {
+  return `<a href="detalle-queja.html?id=${encodeURIComponent(id)}" class="zx-btn zx-btn-detalle zx-btn-sm">Ver detalles</a>`;
 }
 
 // Lista de estados que se consideran "cerrados" (ya no están en proceso): aceptadas al final

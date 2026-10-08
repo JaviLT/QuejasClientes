@@ -1,8 +1,9 @@
 import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml, confirmarAccion } from './auth-guard.js';
-import { enlaceDetalle, establecerRolActual } from './detalle.js';
+import { tituloQueja, botonDetalle, establecerRolActual } from './detalle.js';
 import { subirAdjuntos } from './adjuntos.js';
 import { crearSelectorArchivos } from './selector-archivos.js';
+import { exportarDictamenPdf } from './pdf-dictamen.js';
 
 const sesion = await exigirSesion(['calidad']);
 if (sesion) {
@@ -47,7 +48,7 @@ async function obtenerQuejasPorEstado(estado) {
 function encabezadoFila(q) {
   return `
     <div class="zx-fila-info">
-      ${enlaceDetalle(q.id, q.folio, q.cliente)}
+      ${tituloQueja(q.folio, q.cliente)}
       <span class="zx-fila-meta">${escaparHtml(q.tipo_queja || 'Sin tipo')}${q.prioridad ? ' · Prioridad ' + q.prioridad : ''}</span>
     </div>`;
 }
@@ -66,6 +67,7 @@ async function renderizarSimple(contenedorId, contadorId, estado, botones) {
     <div class="zx-fila">
       ${encabezadoFila(q)}
       <div class="zx-fila-acciones" data-id="${q.id}">
+        ${botonDetalle(q.id)}
         ${botones}
       </div>
     </div>
@@ -90,6 +92,22 @@ async function renderizarSimple(contenedorId, contadorId, estado, botones) {
         if (!confirmarAccion(`¿Confirmas que la muestra de ${folio} ya fue recibida? Pasará a dictamen.`)) return;
         btn.disabled = true;
         await llamarRpc('queja_muestra_recibida', { p_id: id }, 'Muestra marcada como recibida. Pasa a dictamen.');
+      }
+      if (accion === 'exportar_pdf') {
+        // Descarga el dictamen en formato VEN-F-08 con todo lo capturado hasta ahora.
+        const textoOriginal = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Generando PDF…';
+        try {
+          const nombre = await exportarDictamenPdf(id);
+          mostrarMensaje(`PDF generado: ${nombre}`, true);
+        } catch (e) {
+          mostrarMensaje('No se pudo generar el PDF: ' + (e?.message || e), false);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = textoOriginal;
+        }
+        return;
       }
       if (accion === 'material_recibido') {
         if (!confirmarAccion(`¿Confirmas que el material de ${folio} ya llegó a planta? Pasará a revisión.`)) return;
@@ -117,6 +135,7 @@ async function renderizarConTexto(contenedorId, contadorId, estado, rpcNombre, e
       </div>
       <textarea class="zx-textarea-inline" placeholder="${etiquetaCampo}" data-texto></textarea>
       <div class="zx-fila-acciones">
+        ${botonDetalle(q.id)}
         <button class="zx-btn zx-btn-exito zx-btn-sm" data-accion="aceptar">Aceptar</button>
         <button class="zx-btn zx-btn-peligro zx-btn-sm" data-accion="rechazar">Rechazar</button>
       </div>
@@ -161,6 +180,7 @@ async function renderizarDictamenLista(contenedorId, contadorId, estado) {
     <div class="zx-fila">
       ${encabezadoFila(q)}
       <div class="zx-fila-acciones" data-id="${q.id}">
+        ${botonDetalle(q.id)}
         <button type="button" class="zx-btn zx-btn-secundario zx-btn-sm" data-accion="iniciar-dictamen">Iniciar dictamen</button>
       </div>
     </div>
@@ -370,6 +390,7 @@ async function cargarTodo() {
   `);
   await renderizarDictamenLista('lista-dictamen', 'c-dictamen', 'dictamen_pendiente');
   await renderizarSimple('lista-planta', 'c-planta', 'enviado_planta', `
+    <button class="zx-btn zx-btn-sm" data-accion="exportar_pdf">Exportar PDF</button>
     <button class="zx-btn zx-btn-secundario zx-btn-sm" data-accion="material_recibido">Material recibido</button>
   `);
   await renderizarConTexto('lista-revision', 'c-revision', 'revision_pendiente', 'queja_revision', 'Texto de la revisión');
