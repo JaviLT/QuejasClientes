@@ -15,6 +15,8 @@ import { obtenerDatosQueja } from './detalle.js';
 import { esImagenAdjunto } from './adjuntos.js';
 
 const URL_JSPDF = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+// Huella (SRI) de esa versión exacta: si alguien alterara el archivo en la red de entrega, el navegador lo rechaza.
+const SRI_JSPDF = 'sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk';
 
 // Colores (paleta de marca Zubex: azul #0D18A8; recuadros #dbeafe).
 const AZUL = [13, 24, 168];
@@ -43,6 +45,8 @@ function cargarJsPdf() {
     promesaJsPdf = new Promise((resolver, rechazar) => {
       const s = document.createElement('script');
       s.src = URL_JSPDF;
+      s.integrity = SRI_JSPDF;
+      s.crossOrigin = 'anonymous';
       s.onload = () => (window.jspdf?.jsPDF ? resolver(window.jspdf.jsPDF) : rechazar(new Error('No se pudo iniciar la librería de PDF.')));
       s.onerror = () => { promesaJsPdf = null; rechazar(new Error('No se pudo cargar la librería de PDF (revisa tu conexión).')); };
       document.head.appendChild(s);

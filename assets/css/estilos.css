@@ -32,6 +32,7 @@ html[data-tema="oscuro"] #zx-encabezado { background: #101a33; box-shadow: 0 2px
 html[data-tema="oscuro"] .zx-menu-desplegable { background: var(--zx-blanco); border-color: var(--zx-borde); }
 html[data-tema="oscuro"] .zx-mensaje-ok { background: #103622; }
 html[data-tema="oscuro"] .zx-mensaje-error { background: #3a1616; }
+html[data-tema="oscuro"] .zx-mensaje-info { background: #14264d; color: #bfdbfe; }
 html[data-tema="oscuro"] .zx-campo input,
 html[data-tema="oscuro"] .zx-campo select,
 html[data-tema="oscuro"] .zx-campo textarea,
@@ -340,6 +341,7 @@ a { color: var(--zx-secundario); }
 }
 .zx-mensaje-ok { background: #dcfce7; color: var(--zx-exito); }
 .zx-mensaje-error { background: #fee2e2; color: var(--zx-peligro); }
+.zx-mensaje-info { background: #dbeafe; color: #1e40af; }
 .zx-oculto { display: none !important; }
 
 /* ---------- Login ---------- */
@@ -384,6 +386,26 @@ body.zx-pagina-login {
 }
 .zx-login-marca h1 { font-size: 1.2rem; margin: 0; color: var(--zx-texto); }
 .zx-login-tarjeta .zx-btn { width: 100%; margin-top: 6px; }
+.zx-login-sub { margin: 6px 0 0; color: var(--zx-texto-suave); font-size: 0.9rem; }
+.zx-login-tarjeta > .zx-login-sub { text-align: center; margin: 0 0 16px; }
+.zx-login-enlace { text-align: center; margin: 16px 0 0; font-size: 0.85rem; }
+.zx-login-enlace a { color: var(--zx-secundario); }
+.zx-btn-microsoft {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  background: #fff; color: #2f2f2f; border: 1px solid #8c8c8c; font-weight: 600;
+}
+.zx-btn-microsoft:hover:not(:disabled) { background: #f3f3f3; }
+html[data-tema="oscuro"] .zx-btn-microsoft { background: #2f2f2f; color: #fff; border-color: #6b6b6b; }
+html[data-tema="oscuro"] .zx-btn-microsoft:hover:not(:disabled) { background: #3b3b3b; }
+
+/* Pantalla Usuarios */
+.zx-usuario-fila { align-items: center; gap: 12px; flex-wrap: wrap; }
+.zx-usuario-controles { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.zx-usuario-controles select { min-width: 150px; }
+.zx-etiqueta-pendiente { background: #fef3c7; color: #92400e; border-radius: 999px; padding: 2px 10px; font-size: 0.78rem; font-weight: 600; }
+html[data-tema="oscuro"] .zx-etiqueta-pendiente { background: #4a3a10; color: #fde68a; }
+.zx-subtitulo-lista { margin: 18px 0 6px; font-size: 0.95rem; color: var(--zx-texto-suave); }
+.zx-detalles-prueba > summary { cursor: pointer; font-weight: 600; margin-bottom: 12px; }
 
 .zx-selector-pantalla { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
 

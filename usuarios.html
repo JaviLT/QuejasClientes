@@ -7,7 +7,7 @@
 <title>Quejas de Clientes — Usuarios</title>
 <link rel="icon" href="assets/img/logo-zx.png" />
 <link rel="stylesheet" href="assets/css/estilos.css" />
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" integrity="sha384-BWcjm9OdFth9TbhCxZPdm+gAOUMAzQy9nmTs12ioXdCcbVnJaPMn+fMUoQCLt60R" crossorigin="anonymous"></script>
 </head>
 <body>
   <header id="zx-encabezado"></header>
@@ -16,7 +16,14 @@
     <div id="zx-mensaje" class="zx-mensaje zx-oculto"></div>
 
     <div class="zx-tarjeta">
-      <h2>Crear usuario nuevo</h2>
+      <h2>Usuarios <span id="c-usuarios" class="zx-contador">0</span></h2>
+      <p class="zx-vacio" style="text-align:left;margin-top:0;">Las personas entran con su cuenta de Microsoft. La primera vez quedan registradas <strong>sin rol</strong> y aparecen aquí como pendientes para que les asignes uno.</p>
+      <div id="lista-usuarios"></div>
+    </div>
+
+    <div class="zx-tarjeta">
+      <details class="zx-detalles-prueba">
+      <summary>Crear cuenta de prueba con contraseña</summary>
       <form id="zx-form-usuario">
         <div class="zx-form-grid">
           <div class="zx-campo">
@@ -43,11 +50,8 @@
         </div>
         <button type="submit" id="zx-btn-crear-usuario" class="zx-btn zx-btn-primario" style="margin-top:18px;">Crear usuario</button>
       </form>
-    </div>
-
-    <div class="zx-tarjeta">
-      <h2>Usuarios existentes <span id="c-usuarios" class="zx-contador">0</span></h2>
-      <div id="lista-usuarios"></div>
+      <p class="zx-vacio" style="text-align:left;">Estas cuentas entran por <code>login-pruebas.html</code> (no tiene enlace desde el login normal).</p>
+      </details>
     </div>
   </main>
 

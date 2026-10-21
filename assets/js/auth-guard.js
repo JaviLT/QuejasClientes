@@ -41,8 +41,11 @@ export async function exigirSesion(rolesPermitidos = null) {
 }
 
 export async function cerrarSesion() {
+  // Las cuentas de prueba (correo interno) regresan a su acceso con contraseña; el resto, al login con Microsoft.
+  const { data: { session } } = await supabase.auth.getSession();
+  const esDePrueba = (session?.user?.email || '').endsWith('@zx-procesos.local');
   await supabase.auth.signOut();
-  location.replace('login.html');
+  location.replace(esDePrueba ? 'login-pruebas.html' : 'login.html');
 }
 
 function mostrarBloqueo(mensaje) {

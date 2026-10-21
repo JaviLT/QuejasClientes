@@ -36,10 +36,10 @@ Deno.serve(async (req: Request) => {
 
   const { data: perfil, error: perfilErr } = await clienteUsuario
     .from("profiles")
-    .select("rol")
+    .select("rol, activo")
     .eq("id", userData.user.id)
     .single();
-  if (perfilErr || !perfil || perfil.rol !== "admin") {
+  if (perfilErr || !perfil || perfil.rol !== "admin" || perfil.activo === false) {
     return json({ error: "No autorizado" }, 403);
   }
 
@@ -68,7 +68,12 @@ Deno.serve(async (req: Request) => {
     email: correoInterno,
     password: contrasena,
     email_confirm: true,
-    user_metadata: { nombre_completo: nombreCompleto, rol },
+    // El rol va en app_metadata (solo lo puede escribir la API de administración con service_role);
+    // user_metadata lo puede mandar cualquiera al auto-registrarse, así que NUNCA se usa para el rol.
+    user_metadata: { nombre_completo: nombreCompleto },
+    // creado_por_admin: el trigger de auth.users bloquea cualquier alta por correo que no lleve esta marca
+    // (así nadie puede auto-registrarse; solo se entra con Microsoft o con cuentas creadas por un admin).
+    app_metadata: { rol, creado_por_admin: true },
   });
 
   if (crearErr) {
