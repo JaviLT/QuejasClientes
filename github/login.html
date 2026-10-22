@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script>(function(){try{if(localStorage.getItem('zx-tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}})();</script>
+<title>Quejas de Clientes — Iniciar sesión</title>
+<link rel="icon" href="assets/img/logo-zx.png" />
+<link rel="stylesheet" href="assets/css/estilos.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" integrity="sha384-BWcjm9OdFth9TbhCxZPdm+gAOUMAzQy9nmTs12ioXdCcbVnJaPMn+fMUoQCLt60R" crossorigin="anonymous"></script>
+</head>
+<body class="zx-pagina-login">
+  <div class="zx-login-envoltura">
+    <div class="zx-login-tarjeta">
+      <div class="zx-login-marca">
+        <img class="zx-login-logo" src="assets/img/logo-zx.png" alt="ZX" />
+        <h1>Quejas de Clientes</h1>
+      </div>
+
+      <div id="zx-mensaje" class="zx-mensaje zx-oculto"></div>
+
+      <p class="zx-login-sub">Entra con tu cuenta de Microsoft de Zubex.</p>
+      <button type="button" id="zx-btn-microsoft" class="zx-btn zx-btn-microsoft">
+        <svg width="20" height="20" viewBox="0 0 21 21" aria-hidden="true"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+        Entrar con Microsoft
+      </button>
+    </div>
+  </div>
+
+  <footer class="zx-pie" style="color: var(--zx-texto-suave); text-align:center; padding: 10px 16px 16px;">Quejas de Clientes — Zubex</footer>
+
+  <script type="module" src="assets/js/login.js"></script>
+</body>
+</html>

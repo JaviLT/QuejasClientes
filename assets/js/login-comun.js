@@ -1,4 +1,5 @@
 import { supabase } from './supabase-client.js';
+import { PANTALLAS_ASIGNABLES } from './pantallas.js';
 
 export const DESTINOS = { comercial: 'comercial.html', calidad: 'calidad.html', cedis: 'cedis.html', admin: 'admin.html' };
 
@@ -22,7 +23,7 @@ export async function redirigirSegunRol() {
 
   const { data: perfil, error } = await supabase
     .from('profiles')
-    .select('rol, activo, correo')
+    .select('rol, activo, correo, roles(pantallas)')
     .eq('id', session.user.id)
     .single();
 
@@ -32,11 +33,15 @@ export async function redirigirSegunRol() {
     return false;
   }
 
-  const destino = DESTINOS[perfil.rol];
+  // Admin → su panel; cualquier otro rol (de siempre o creado por el admin) → la primera de sus pantallas asignadas.
+  const primera = PANTALLAS_ASIGNABLES.find((p) => (perfil.roles?.pantallas || []).includes(p.clave));
+  const destino = perfil.rol === 'admin' ? DESTINOS.admin : (primera && primera.href);
   if (!destino) {
     const quien = perfil.correo ? ` (${perfil.correo})` : '';
     await supabase.auth.signOut();
-    mostrarError(`Tu cuenta${quien} ya quedó registrada, pero todavía no tiene un rol asignado. Pide a un administrador que te lo asigne y vuelve a entrar.`, 'info');
+    mostrarError(perfil.rol
+      ? `Tu rol todavía no tiene pantallas asignadas${quien}. Pide a un administrador que se las asigne y vuelve a entrar.`
+      : `Tu cuenta${quien} ya quedó registrada, pero todavía no tiene un rol asignado. Pide a un administrador que te lo asigne y vuelve a entrar.`, 'info');
     return false;
   }
 

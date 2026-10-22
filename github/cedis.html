@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script>(function(){try{if(localStorage.getItem('zx-tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}})();</script>
+<title>Quejas de Clientes — CEDIS</title>
+<link rel="icon" href="assets/img/logo-zx.png" />
+<link rel="stylesheet" href="assets/css/estilos.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" integrity="sha384-BWcjm9OdFth9TbhCxZPdm+gAOUMAzQy9nmTs12ioXdCcbVnJaPMn+fMUoQCLt60R" crossorigin="anonymous"></script>
+</head>
+<body>
+  <header id="zx-encabezado"></header>
+
+  <main class="zx-contenedor">
+    <div id="zx-mensaje" class="zx-mensaje zx-oculto"></div>
+
+    <div class="zx-tarjeta">
+      <h2>
+        Espera de recolección <span id="c-espera" class="zx-contador">0</span>
+      </h2>
+      <div id="lista-espera"></div>
+    </div>
+
+    <div class="zx-tarjeta">
+      <h2>Folios pendientes de enviar <span id="c-pendientes" class="zx-contador">0</span></h2>
+      <div id="lista-pendientes"></div>
+    </div>
+
+    <div class="zx-tarjeta">
+      <h2>Nota de crédito creada <span id="c-nc" class="zx-contador">0</span></h2>
+      <div id="lista-nc"></div>
+    </div>
+  </main>
+
+  <footer class="zx-pie">Quejas de Clientes — Zubex</footer>
+
+  <script type="module" src="assets/js/cedis.js"></script>
+</body>
+</html>

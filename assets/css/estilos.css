@@ -638,3 +638,31 @@ footer.zx-pie {
   text-decoration: none;
 }
 .zx-enlace-volver:hover { text-decoration: underline; }
+
+
+/* ---------- Roles y permisos por pantalla (ronda 11) ---------- */
+body.zx-solo-lectura .zx-fila-acciones button:not([data-accion="exportar_pdf"]),
+body.zx-solo-lectura .zx-btn-header-accion { display: none !important; }
+.zx-aviso-lectura { background: #dbeafe; color: #1e40af; padding: 8px 20px; font-size: 0.85rem; text-align: center; }
+html[data-tema="oscuro"] .zx-aviso-lectura { background: #14264d; color: #bfdbfe; }
+
+.zx-rol-tarjeta { border: 1px solid var(--zx-borde); border-radius: 10px; padding: 14px 16px; margin-top: 12px; }
+.zx-rol-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.zx-rol-cabecera strong { font-size: 1rem; }
+.zx-rol-etiqueta { font-size: 0.75rem; font-weight: 600; border-radius: 999px; padding: 2px 10px; background: var(--zx-borde); color: var(--zx-texto-suave); }
+.zx-rol-pantallas { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 12px 0; }
+.zx-rol-pantallas label { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; cursor: pointer; }
+.zx-rol-pantallas input { width: auto; }
+.zx-rol-acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ---------- Página de tiempos (ronda 11) ---------- */
+.zx-tabla-tiempos-envoltura { overflow-x: auto; margin-top: 12px; }
+.zx-tabla-tiempos { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.zx-tabla-tiempos th, .zx-tabla-tiempos td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--zx-borde); white-space: nowrap; }
+.zx-tabla-tiempos th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--zx-texto-suave); position: sticky; top: 0; background: var(--zx-blanco); }
+.zx-tabla-tiempos td.zx-t-vacio { color: var(--zx-texto-suave); }
+.zx-tabla-tiempos td.zx-t-curso { color: var(--zx-secundario); font-weight: 600; }
+.zx-tabla-tiempos td.zx-t-total { font-weight: 700; }
+.zx-tabla-tiempos .zx-t-folio { font-weight: 700; color: var(--zx-primario); }
+.zx-filtros-tiempos { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+.zx-filtros-tiempos input, .zx-filtros-tiempos select { width: auto; min-width: 180px; }

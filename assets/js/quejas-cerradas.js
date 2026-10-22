@@ -8,10 +8,9 @@ import { exigirSesion, pintarEncabezado, escaparHtml, confirmarAccion } from './
 import { formatoDuracionFija } from './tiempo.js';
 import { tituloQueja, botonDetalle, establecerRolActual, ESTADOS_TERMINALES } from './detalle.js';
 
-const TODOS_LOS_ROLES = ['comercial', 'calidad', 'cedis', 'admin'];
 let esAdmin = false;
 
-const sesion = await exigirSesion(TODOS_LOS_ROLES);
+const sesion = await exigirSesion(null, 'quejas_cerradas');
 if (sesion) {
   esAdmin = sesion.perfil.rol === 'admin';
   establecerRolActual(sesion.perfil.rol);

@@ -1,14 +1,19 @@
 // ZX · Procesos — control de sesión y de rol, compartido por comercial/calidad/cedis.
 import { supabase } from './supabase-client.js';
 import { APP_VERSION } from './version.js';
+import { TODAS_LAS_PANTALLAS, pantallaPorClave, pantallasDePerfil } from './pantallas.js';
 
 /**
- * Exige que haya una sesión activa y (opcionalmente) un rol permitido.
+ * Exige que haya una sesión activa y (opcionalmente) un rol o una pantalla permitidos.
  * Si no se cumple, redirige al login o bloquea la pantalla.
- * @param {string[]|null} rolesPermitidos - ej. ['calidad','admin']. null = cualquier rol con sesión.
- * @returns {Promise<{session, perfil}|null>}
+ * @param {string[]|null} rolesPermitidos - ej. ['admin']. null = no se filtra por nombre de rol.
+ * @param {string|null} pantalla - clave de pantalla (ver pantallas.js). Si se da, el rol de la
+ *   persona debe tener esa pantalla asignada (en la pantalla Roles). Si la pantalla es de las que
+ *   tienen un rol "nativo" (comercial/calidad/cedis) y la persona tiene otro rol, la pantalla se
+ *   abre en solo lectura (body.zx-solo-lectura: se esconden los botones que cambian el proceso).
+ * @returns {Promise<{session, perfil}|null>} perfil incluye `rolNombre` y `pantallas` (claves).
  */
-export async function exigirSesion(rolesPermitidos = null) {
+export async function exigirSesion(rolesPermitidos = null, pantalla = null) {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
     location.replace('login.html');
@@ -17,7 +22,7 @@ export async function exigirSesion(rolesPermitidos = null) {
 
   const { data: perfil, error } = await supabase
     .from('profiles')
-    .select('rol, nombre_completo, activo')
+    .select('rol, nombre_completo, activo, roles(nombre, pantallas)')
     .eq('id', session.user.id)
     .single();
 
@@ -27,14 +32,28 @@ export async function exigirSesion(rolesPermitidos = null) {
     return null;
   }
 
+  if (!perfil.rol) {
+    mostrarBloqueo('Tu cuenta todavía no tiene un rol asignado. Pide a un administrador que te lo asigne.');
+    return null;
+  }
+
+  perfil.rolNombre = perfil.roles?.nombre || ETIQUETAS_ROL[perfil.rol] || perfil.rol;
+  perfil.pantallas = pantallasDePerfil(perfil.rol, perfil.roles?.pantallas);
+
   if (rolesPermitidos && !rolesPermitidos.includes(perfil.rol)) {
     mostrarBloqueo('Tu cuenta no tiene acceso a esta pantalla.');
     return null;
   }
 
-  if (!perfil.rol) {
-    mostrarBloqueo('Tu cuenta todavía no tiene un rol asignado. Pide a un administrador que te lo asigne.');
-    return null;
+  if (pantalla) {
+    if (!perfil.pantallas.includes(pantalla)) {
+      mostrarBloqueo('Tu rol no tiene acceso a esta pantalla.');
+      return null;
+    }
+    const rolNativo = pantallaPorClave(pantalla)?.rolNativo;
+    if (rolNativo && perfil.rol !== rolNativo) {
+      document.body.classList.add('zx-solo-lectura');
+    }
   }
 
   return { session, perfil };
@@ -57,18 +76,6 @@ function mostrarBloqueo(mensaje) {
   document.getElementById('zx-btn-salir-bloqueo').addEventListener('click', cerrarSesion);
 }
 
-const PANTALLAS_ADMIN = [
-  { href: 'admin.html', etiqueta: 'Administrador' },
-  { href: 'usuarios.html', etiqueta: 'Usuarios' },
-];
-
-// "Quejas cerradas" ahora es una pestaña de la barra superior, visible para cualquier rol con
-// sesión — antes era una tarjeta repetida dentro de cada pantalla (Comercial/Calidad/CEDIS/Admin)
-// que además mostraba una lista aparte. Desde esta ronda (30 de septiembre de 2026, séptima del
-// día) las quejas cerradas solo aparecen en quejas-cerradas.html y en ningún otro lado; esta
-// pestaña es la única puerta de entrada a esa pantalla.
-const PANTALLA_CERRADAS = { href: 'quejas-cerradas.html', etiqueta: 'Quejas cerradas' };
-
 /** Etiqueta legible de cada rol (para el botón de usuario del encabezado y otras pantallas). */
 export const ETIQUETAS_ROL = { comercial: 'Comercial', calidad: 'Calidad', cedis: 'CEDIS', admin: 'Administrador' };
 
@@ -87,7 +94,7 @@ export function pintarEncabezado(perfil, tituloPantalla, opciones = {}) {
   const el = document.getElementById('zx-encabezado');
   if (!el) return;
   const paginaActual = location.pathname.split('/').pop();
-  const pantallasNav = perfil.rol === 'admin' ? [...PANTALLAS_ADMIN, PANTALLA_CERRADAS] : [PANTALLA_CERRADAS];
+  const pantallasNav = (perfil.pantallas || []).map(pantallaPorClave).filter(Boolean);
   const navAdmin = `
     <nav class="zx-header-nav">
       ${pantallasNav.map((p) => `<a class="${p.href === paginaActual ? 'zx-nav-activo' : ''}" href="${p.href}">${p.etiqueta}</a>`).join('')}
@@ -106,7 +113,7 @@ export function pintarEncabezado(perfil, tituloPantalla, opciones = {}) {
       <div class="zx-header-usuario-menu">
         <button type="button" id="zx-btn-usuario-menu" class="zx-btn-usuario" aria-haspopup="true" aria-expanded="false">
           <span class="zx-usuario-nombre">${escaparHtml(perfil.nombre_completo)}</span>
-          <span class="zx-usuario-rol">${escaparHtml(ETIQUETAS_ROL[perfil.rol] || perfil.rol)}</span>
+          <span class="zx-usuario-rol">${escaparHtml(perfil.rolNombre || ETIQUETAS_ROL[perfil.rol] || perfil.rol)}</span>
         </button>
         <div id="zx-menu-usuario" class="zx-menu-desplegable zx-oculto">
           <button type="button" id="zx-btn-tema" class="zx-menu-item"></button>
@@ -115,6 +122,9 @@ export function pintarEncabezado(perfil, tituloPantalla, opciones = {}) {
       </div>
     </div>`;
   document.getElementById('zx-btn-salir').addEventListener('click', cerrarSesion);
+  if (document.body.classList.contains('zx-solo-lectura') && !document.getElementById('zx-aviso-lectura')) {
+    el.insertAdjacentHTML('afterend', '<div id="zx-aviso-lectura" class="zx-aviso-lectura">Estás viendo esta pantalla en modo solo lectura: tu rol puede consultar la información, pero no ejecutar acciones.</div>');
+  }
 
   const btnTema = document.getElementById('zx-btn-tema');
   pintarIconoTema(btnTema);

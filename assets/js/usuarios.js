@@ -1,9 +1,9 @@
 import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml } from './auth-guard.js';
 
-const ETIQUETAS_ROL = { comercial: 'Comercial', calidad: 'Calidad', cedis: 'CEDIS', admin: 'Administrador' };
+let ETIQUETAS_ROL = { comercial: 'Comercial', calidad: 'Calidad', cedis: 'CEDIS', admin: 'Administrador' };
 
-const ROLES = ['comercial', 'calidad', 'cedis', 'admin'];
+let ROLES = ['comercial', 'calidad', 'cedis', 'admin'];
 let miId = null;
 
 const sesion = await exigirSesion(['admin']);
@@ -61,7 +61,18 @@ async function leerError(error) {
   }
 }
 
+async function cargarRolesDisponibles() {
+  const { data } = await supabase.from('roles').select('clave, nombre').order('es_sistema', { ascending: false }).order('nombre');
+  if (data && data.length) {
+    ROLES = data.map((r) => r.clave);
+    ETIQUETAS_ROL = Object.fromEntries(data.map((r) => [r.clave, r.nombre]));
+    const sel = document.getElementById('nuevo-rol');
+    if (sel) sel.innerHTML = data.map((r) => `<option value="${escaparHtml(r.clave)}">${escaparHtml(r.nombre)}</option>`).join('');
+  }
+}
+
 async function cargarUsuarios() {
+  await cargarRolesDisponibles();
   if (!miId) {
     const { data: { session } } = await supabase.auth.getSession();
     miId = session?.user?.id || null;

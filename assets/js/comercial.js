@@ -4,7 +4,7 @@ import { tituloQueja, botonDetalle, establecerRolActual, ESTADOS_TERMINALES } fr
 import { subirAdjuntos } from './adjuntos.js';
 import { crearSelectorArchivos } from './selector-archivos.js';
 
-const sesion = await exigirSesion(['comercial']);
+const sesion = await exigirSesion(null, 'comercial');
 if (sesion) {
   establecerRolActual(sesion.perfil.rol);
   pintarEncabezado(sesion.perfil, 'Comercial', {

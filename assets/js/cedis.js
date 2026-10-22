@@ -2,7 +2,7 @@ import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml, confirmarAccion } from './auth-guard.js';
 import { tituloQueja, botonDetalle, establecerRolActual } from './detalle.js';
 
-const sesion = await exigirSesion(['cedis']);
+const sesion = await exigirSesion(null, 'cedis');
 if (sesion) {
   establecerRolActual(sesion.perfil.rol);
   pintarEncabezado(sesion.perfil, 'CEDIS', {

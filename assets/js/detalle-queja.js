@@ -5,9 +5,8 @@ import { establecerRolActual, obtenerDatosQueja, construirContenidoDetalle, acti
 // Cualquier rol con sesión puede ver el detalle de cualquier queja — mismo criterio que ya
 // tenía el pop up (es de solo lectura; lo que cambia según el rol son las fechas de proceso,
 // ver detalle.js / establecerRolActual).
-const TODOS_LOS_ROLES = ['comercial', 'calidad', 'cedis', 'admin'];
 
-const sesion = await exigirSesion(TODOS_LOS_ROLES);
+const sesion = await exigirSesion(null);
 if (sesion) {
   establecerRolActual(sesion.perfil.rol);
   pintarEncabezado(sesion.perfil, 'Detalle de queja');

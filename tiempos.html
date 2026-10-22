@@ -3,11 +3,37 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Quejas de Clientes — redirigiendo…</title>
+<script>(function(){try{if(localStorage.getItem('zx-tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}})();</script>
+<title>Quejas de Clientes — Tiempos</title>
 <link rel="icon" href="assets/img/logo-zx.png" />
-<meta http-equiv="refresh" content="0; url=admin.html" />
+<link rel="stylesheet" href="assets/css/estilos.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" integrity="sha384-BWcjm9OdFth9TbhCxZPdm+gAOUMAzQy9nmTs12ioXdCcbVnJaPMn+fMUoQCLt60R" crossorigin="anonymous"></script>
 </head>
 <body>
-  <p>Esta pantalla ahora se llama <a href="admin.html">Administrador</a>. Redirigiendo…</p>
+  <header id="zx-encabezado"></header>
+
+  <main class="zx-contenedor">
+    <div id="zx-mensaje" class="zx-mensaje zx-oculto"></div>
+
+    <div class="zx-tarjeta">
+      <h2>Tiempos por queja <span id="c-quejas" class="zx-contador">0</span></h2>
+      <p class="zx-fila-meta" style="margin-top:-6px;">Cuánto duró cada etapa de cada queja. La etapa que sigue en curso aparece en azul y se suma al total.</p>
+      <div class="zx-filtros-tiempos">
+        <input type="search" id="filtro-texto" placeholder="Buscar por folio o cliente" autocomplete="off" />
+        <select id="filtro-estado" aria-label="Estatus">
+          <option value="todas">Todas las quejas</option>
+          <option value="abiertas">Solo abiertas</option>
+          <option value="cerradas">Solo cerradas</option>
+        </select>
+      </div>
+      <div class="zx-tabla-tiempos-envoltura">
+        <table class="zx-tabla-tiempos" id="tabla-tiempos"></table>
+      </div>
+    </div>
+  </main>
+
+  <footer class="zx-pie">Quejas de Clientes — Zubex</footer>
+
+  <script type="module" src="assets/js/tiempos-quejas.js"></script>
 </body>
 </html>

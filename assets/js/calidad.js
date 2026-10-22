@@ -5,7 +5,7 @@ import { subirAdjuntos } from './adjuntos.js';
 import { crearSelectorArchivos } from './selector-archivos.js';
 import { exportarDictamenPdf } from './pdf-dictamen.js';
 
-const sesion = await exigirSesion(['calidad']);
+const sesion = await exigirSesion(null, 'calidad');
 if (sesion) {
   establecerRolActual(sesion.perfil.rol);
   pintarEncabezado(sesion.perfil, 'Calidad');

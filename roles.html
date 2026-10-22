@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script>(function(){try{if(localStorage.getItem('zx-tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}})();</script>
+<title>Quejas de Clientes — Roles</title>
+<link rel="icon" href="assets/img/logo-zx.png" />
+<link rel="stylesheet" href="assets/css/estilos.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" integrity="sha384-BWcjm9OdFth9TbhCxZPdm+gAOUMAzQy9nmTs12ioXdCcbVnJaPMn+fMUoQCLt60R" crossorigin="anonymous"></script>
+</head>
+<body>
+  <header id="zx-encabezado"></header>
+
+  <main class="zx-contenedor">
+    <div id="zx-mensaje" class="zx-mensaje zx-oculto"></div>
+
+    <div class="zx-tarjeta">
+      <h2>Roles <span id="c-roles" class="zx-contador">0</span></h2>
+      <p class="zx-vacio" style="text-align:left;margin-top:0;">Cada rol decide <strong>qué pantallas puede abrir</strong>. Un rol nuevo solo consulta: las acciones que cambian el proceso de una queja (registrar, dictaminar, recibir material, enviar a planta, eliminar…) siguen siendo de Comercial, Calidad, CEDIS y Administrador, y en las pantallas de otro rol se abren en modo solo lectura. Administrador siempre ve todo y no se puede modificar. Los cambios aplican la siguiente vez que la persona abre o recarga una pantalla.</p>
+      <div id="lista-roles"></div>
+    </div>
+
+    <div class="zx-tarjeta">
+      <h2>Crear rol nuevo</h2>
+      <form id="zx-form-rol">
+        <div class="zx-campo">
+          <label for="rol-nombre">Nombre del rol <span class="req">*</span></label>
+          <input type="text" id="rol-nombre" maxlength="40" placeholder="ej. Supervisor" autocomplete="off" required />
+        </div>
+        <div class="zx-campo" style="margin-top:12px;">
+          <label>Pantallas que puede ver</label>
+          <div id="nuevo-rol-pantallas" class="zx-rol-pantallas"></div>
+        </div>
+        <button type="submit" id="zx-btn-crear-rol" class="zx-btn zx-btn-primario" style="margin-top:12px;">Crear rol</button>
+      </form>
+    </div>
+  </main>
+
+  <footer class="zx-pie">Quejas de Clientes — Zubex</footer>
+
+  <script type="module" src="assets/js/roles.js"></script>
+</body>
+</html>
