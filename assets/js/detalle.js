@@ -36,6 +36,13 @@ function formatoFecha(iso) {
   }
 }
 
+/** Lotes de una recolección como texto: "L1 (5), L2 (3)". Con un solo lote o datos antiguos, devuelve el lote tal cual. */
+export function textoLotes(rec) {
+  const lotes = Array.isArray(rec?.lotes) ? rec.lotes : [];
+  if (lotes.length > 1) return lotes.map((l) => `${l.lote} (${l.cantidad})`).join(', ');
+  return rec?.lote_rechazo || '';
+}
+
 function dato(etiqueta, valor) {
   return `<div class="zx-detalle-dato"><span>${escaparHtml(etiqueta)}</span>${escaparHtml(valor || '—')}</div>`;
 }
@@ -52,7 +59,7 @@ export async function obtenerDatosQueja(id) {
       .single(),
     supabase.from('tempos').select('*').eq('queja_id', id).order('creado_en', { ascending: true }),
     supabase.from('dictamenes').select('*').eq('queja_id', id).maybeSingle(),
-    supabase.from('recolecciones').select('folio, generado_en, enviado_en, cantidad, lote_rechazo').eq('queja_id', id).maybeSingle(),
+    supabase.from('recolecciones').select('folio, generado_en, enviado_en, cantidad, lote_rechazo, lotes, codigo').eq('queja_id', id).maybeSingle(),
     supabase.from('queja_adjuntos').select('id, nombre_archivo, ruta_storage, tipo_mime, tamanio_bytes').eq('queja_id', id).order('subido_en', { ascending: true }),
   ]);
 
@@ -105,6 +112,7 @@ export function construirContenidoDetalle(datos) {
       ${dictamenes.identificacion_causa_raiz ? `<p><strong>Causa raíz:</strong> ${escaparHtml(dictamenes.identificacion_causa_raiz)}</p>` : ''}
       ${equipo.length ? `<p><strong>Equipo multidisciplinario:</strong> ${equipo.map((e) => escaparHtml(e.nombre) + (e.puesto ? ' (' + escaparHtml(e.puesto) + ')' : '')).join(', ')}</p>` : ''}
       ${medidas.length ? `<p><strong>Medidas de contención/preventivas:</strong></p><ul>${medidas.map((m) => `<li>${escaparHtml(m.medida)}${m.responsable ? ' — ' + escaparHtml(m.responsable) : ''}${m.fecha ? ' (' + escaparHtml(m.fecha) + ')' : ''}</li>`).join('')}</ul>` : ''}
+      ${dictamenes.comentarios_medidas ? `<p><strong>Comentarios de las medidas:</strong> ${escaparHtml(dictamenes.comentarios_medidas)}</p>` : ''}
       ${dictamenes.conclusion ? `<p><strong>Conclusión:</strong> ${escaparHtml(dictamenes.conclusion)}</p>` : ''}
     </div>` : '';
 
@@ -137,7 +145,8 @@ export function construirContenidoDetalle(datos) {
       <div class="zx-detalle-grid">
         ${dato('Folio', recolecciones.folio)}
         ${recolecciones.cantidad !== null && recolecciones.cantidad !== undefined ? dato('Cantidad', recolecciones.cantidad) : ''}
-        ${recolecciones.lote_rechazo ? dato('Lote de rechazo', recolecciones.lote_rechazo) : ''}
+        ${recolecciones.codigo ? dato('Código', recolecciones.codigo) : ''}
+        ${textoLotes(recolecciones) ? dato(Array.isArray(recolecciones.lotes) && recolecciones.lotes.length > 1 ? 'Lotes de rechazo (cantidad)' : 'Lote de rechazo', textoLotes(recolecciones)) : ''}
         ${esAdmin() ? dato('Generado', formatoFecha(recolecciones.generado_en)) : ''}
         ${esAdmin() ? dato('Enviado', recolecciones.enviado_en ? formatoFecha(recolecciones.enviado_en) : 'Pendiente') : ''}
       </div>

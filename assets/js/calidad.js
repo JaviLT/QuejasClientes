@@ -272,6 +272,9 @@ function abrirModalDictamen(id, folio) {
       <div class="zx-dictamen-seccion">
         <span class="zx-etiqueta-seccion">1. Descripción del problema <span class="req">*</span></span>
         <textarea class="zx-textarea-inline" data-descripcion required></textarea>
+        <span class="zx-etiqueta-seccion" style="margin-top:10px;">Adjuntos (evidencia del dictamen — opcional)</span>
+        <div data-selector-adjuntos-dictamen></div>
+        <span class="zx-fila-meta" style="display:block; margin-top:4px;">Máximo 15 MB por archivo.</span>
       </div>
 
       <div class="zx-dictamen-seccion">
@@ -286,6 +289,7 @@ function abrirModalDictamen(id, folio) {
         <span class="zx-etiqueta-seccion">3. Medidas de contención y preventivas</span>
         <div class="zx-subtabla" data-lista="medidas">${filaMedida()}</div>
         <button type="button" class="zx-btn-agregar-fila" data-agregar="medidas">+ Agregar medida</button>
+        <textarea class="zx-textarea-inline" data-comentarios-medidas placeholder="Agregar comentarios" aria-label="Agregar comentarios" style="margin-top:10px;"></textarea>
       </div>
 
       <div class="zx-dictamen-seccion">
@@ -298,12 +302,6 @@ function abrirModalDictamen(id, folio) {
           <label>Recibido por</label>
           <input type="text" data-recibido-por />
         </div>
-      </div>
-
-      <div class="zx-dictamen-seccion">
-        <span class="zx-etiqueta-seccion">Adjuntos (evidencia del dictamen — opcional)</span>
-        <div data-selector-adjuntos-dictamen></div>
-        <span class="zx-fila-meta" style="display:block; margin-top:4px;">Máximo 15 MB por archivo.</span>
       </div>
 
       <div class="zx-fila-acciones" style="margin-top:14px;">
@@ -355,6 +353,7 @@ function abrirModalDictamen(id, folio) {
         desviacion_reportada: modal.querySelector('[data-desviacion]').value.trim(),
         descripcion_problema: descripcion,
         identificacion_causa_raiz: modal.querySelector('[data-causa-raiz]').value.trim(),
+        comentarios_medidas: modal.querySelector('[data-comentarios-medidas]').value.trim(),
         conclusion: modal.querySelector('[data-conclusion]').value.trim(),
         recibido_por: modal.querySelector('[data-recibido-por]').value.trim(),
         equipo,

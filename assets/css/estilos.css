@@ -74,11 +74,11 @@ a { color: var(--zx-secundario); }
 }
 .zx-header-marca { display: flex; align-items: center; gap: 12px; }
 .zx-header-logo {
-  width: 28px;
-  height: 28px;
-  padding: 4px;
+  width: 46px;
+  height: 46px;
+  padding: 2px;
   background: #fff;
-  border-radius: 8px;
+  border-radius: 10px;
   display: block;
   object-fit: contain;
   flex: none;
@@ -95,6 +95,15 @@ a { color: var(--zx-secundario); }
 }
 .zx-header-nav a:hover { background: rgba(255,255,255,0.12); }
 .zx-header-nav a.zx-nav-activo { background: rgba(255,255,255,0.22); color: #fff; }
+/* "Quejas cerradas" con aspecto de botón */
+.zx-header-nav a.zx-nav-boton {
+  background: rgba(255,255,255,0.16);
+  border: 1.5px solid rgba(255,255,255,0.7);
+  color: #fff;
+  padding: 5px 14px;
+}
+.zx-header-nav a.zx-nav-boton:hover { background: rgba(255,255,255,0.3); }
+.zx-header-nav a.zx-nav-boton.zx-nav-activo { background: #fff; color: var(--zx-primario); border-color: #fff; }
 
 /* ---------- Botón de acción del encabezado (ej. "Nueva queja", "Folio sin queja") ---------- */
 .zx-btn-header-accion {
@@ -129,9 +138,9 @@ a { color: var(--zx-secundario); }
 .zx-header-usuario-menu { position: relative; }
 .zx-btn-usuario {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 1px;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
   background: rgba(255,255,255,0.12);
   border: none;
   border-radius: 8px;
@@ -143,7 +152,45 @@ a { color: var(--zx-secundario); }
 }
 .zx-btn-usuario:hover { background: rgba(255,255,255,0.22); }
 .zx-usuario-nombre { font-size: 0.86rem; font-weight: 600; }
-.zx-usuario-rol { font-size: 0.72rem; opacity: 0.85; }
+.zx-usuario-flecha { font-size: 0.75rem; opacity: 0.85; }
+.zx-header-derecha { display: flex; align-items: center; gap: 12px; }
+
+/* Interruptor sol/luna del modo noche */
+.zx-interruptor-tema {
+  position: relative;
+  width: 58px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.16);
+  cursor: pointer;
+  padding: 0;
+  flex: none;
+  font-family: inherit;
+}
+.zx-interruptor-tema:hover { background: rgba(255,255,255,0.28); }
+.zx-interruptor-icono {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.8rem;
+  line-height: 1;
+}
+.zx-icono-sol { left: 7px; }
+.zx-icono-luna { right: 7px; }
+.zx-interruptor-bola {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  transition: transform 0.18s ease;
+}
+.zx-interruptor-tema[aria-checked="true"] .zx-interruptor-bola { transform: translateX(28px); }
+.zx-interruptor-tema:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .zx-menu-desplegable {
   position: absolute;
   top: calc(100% + 8px);
@@ -614,7 +661,6 @@ footer.zx-pie {
 
 @media (max-width: 480px) {
   .zx-header-titulo { font-size: 0.95rem; }
-  .zx-btn-usuario { align-items: center; }
   .zx-login-tarjeta { padding: 28px 22px; }
 }
 

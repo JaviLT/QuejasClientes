@@ -23,9 +23,13 @@ export function pantallaPorClave(clave) {
   return TODAS_LAS_PANTALLAS.find((p) => p.clave === clave) || null;
 }
 
-/** Pantallas que realmente puede abrir un perfil: las fijas de admin + las de su rol, en el orden del catálogo. */
+/** Pantallas que realmente puede abrir un perfil: las fijas de admin (más Comercial/Calidad/CEDIS en solo lectura) + las de su rol, en el orden del catálogo. */
 export function pantallasDePerfil(rol, pantallasDelRol) {
   const claves = new Set(pantallasDelRol || []);
-  if (rol === 'admin') PANTALLAS_SOLO_ADMIN.forEach((p) => claves.add(p.clave));
+  if (rol === 'admin') {
+    PANTALLAS_SOLO_ADMIN.forEach((p) => claves.add(p.clave));
+    // Admin también puede ver Comercial, Calidad y CEDIS (en modo solo lectura: ver exigirSesion).
+    PANTALLAS_ASIGNABLES.filter((p) => p.rolNativo).forEach((p) => claves.add(p.clave));
+  }
   return TODAS_LAS_PANTALLAS.filter((p) => claves.has(p.clave)).map((p) => p.clave);
 }

@@ -3,12 +3,13 @@ import { exigirSesion, pintarEncabezado, escaparHtml } from './auth-guard.js';
 import { tituloQueja, botonDetalle, establecerRolActual, ESTADOS_TERMINALES } from './detalle.js';
 import { subirAdjuntos } from './adjuntos.js';
 import { crearSelectorArchivos } from './selector-archivos.js';
+import { botonDescargarPdf, activarBotonesPdf } from './pdf-dictamen.js';
 
 const sesion = await exigirSesion(null, 'comercial');
 if (sesion) {
   establecerRolActual(sesion.perfil.rol);
   pintarEncabezado(sesion.perfil, 'Comercial', {
-    boton: { id: 'zx-btn-abrir-nueva', texto: 'Nueva queja', icono: '+' },
+    boton: { id: 'zx-btn-abrir-nueva', texto: 'Nueva queja' },
   });
   await cargarCatalogoTiposQueja();
   await cargarMisQuejas();
@@ -135,11 +136,15 @@ async function cargarMisQuejas() {
   // consulta, no después, para que el límite de 20 siga trayendo las 20 más recientes que de
   // verdad importan aquí.
   const listaTerminales = `(${ESTADOS_TERMINALES.join(',')})`;
-  const { data, error } = await supabase
+  // Quien solo consulta esta pantalla (p. ej. Admin, modo solo lectura) ve las quejas abiertas de todos;
+  // quien actúa como Comercial ve las que él registró.
+  const soloConsulta = document.body.classList.contains('zx-solo-lectura');
+  let consulta = supabase
     .from('quejas')
     .select('id, folio, cliente, tipo_queja, estado, creada_en, catalogo_estados(etiqueta)')
-    .eq('creada_por', session.user.id)
-    .not('estado', 'in', listaTerminales)
+    .not('estado', 'in', listaTerminales);
+  if (!soloConsulta) consulta = consulta.eq('creada_por', session.user.id);
+  const { data, error } = await consulta
     .order('creada_en', { ascending: false })
     .limit(20);
 
@@ -166,10 +171,16 @@ async function cargarMisQuejas() {
       </div>
       <div class="zx-fila-acciones">
         ${botonDetalle(q.id)}
+        ${botonDescargarPdf(q)}
         <span class="zx-contador">${escaparHtml(q.catalogo_estados?.etiqueta || q.estado)}</span>
       </div>
     </div>
   `).join('');
+  activarBotonesPdf(lista, (texto, ok) => {
+    const mensaje = document.getElementById('zx-mensaje');
+    mensaje.textContent = texto;
+    mensaje.className = 'zx-mensaje ' + (ok ? 'zx-mensaje-ok' : 'zx-mensaje-error');
+  });
 }
 
 function escucharCambiosEnVivo() {

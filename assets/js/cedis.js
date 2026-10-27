@@ -16,20 +16,7 @@ if (sesion) {
   await cargarTodo();
   escucharCambiosEnVivo();
 
-  document.getElementById('btn-sin-queja').addEventListener('click', async (evento) => {
-    if (!confirmarAccion('¿Confirmas generar un folio de recolección sin queja asociada?')) return;
-    const btn = evento.currentTarget;
-    btn.disabled = true;
-    const { data: idFolio, error } = await supabase.rpc('recoleccion_sin_queja');
-    btn.disabled = false;
-    if (error) {
-      mostrarMensaje('No se pudo generar el folio: ' + error.message, false);
-      return;
-    }
-    const { data: fila } = await supabase.from('recolecciones').select('folio').eq('id', idFolio).single();
-    mostrarMensaje(`Folio generado: ${fila?.folio || idFolio}.`, true);
-    await cargarTodo();
-  });
+  document.getElementById('btn-sin-queja').addEventListener('click', abrirModalSinQueja);
 }
 
 const mensaje = document.getElementById('zx-mensaje');
@@ -88,38 +75,15 @@ async function cargarEspera() {
   });
 }
 
-// ---------- Popup "Material recibido": pide cantidad y lote de rechazo antes de generar el folio ----------
-function abrirModalMaterialRecibido(id, folio) {
-  const previo = document.getElementById('zx-modal-material-fondo');
+// ---------- Utilidades de pop up ----------
+function crearModal(idFondo, html) {
+  const previo = document.getElementById(idFondo);
   if (previo) previo.remove();
-
   const fondo = document.createElement('div');
-  fondo.id = 'zx-modal-material-fondo';
+  fondo.id = idFondo;
   fondo.className = 'zx-modal-fondo';
-  fondo.innerHTML = `
-    <div class="zx-modal">
-      <div class="zx-modal-cabecera">
-        <h2>Material recibido · ${escaparHtml(folio)}</h2>
-        <button type="button" class="zx-modal-cerrar" data-cerrar>✕</button>
-      </div>
-      <p class="zx-fila-meta" style="margin-top:-4px;">Captura estos datos antes de generar el folio de recolección.</p>
-      <div class="zx-form-grid">
-        <div class="zx-campo">
-          <label>Cantidad</label>
-          <input type="number" step="any" min="0" data-cantidad required />
-        </div>
-        <div class="zx-campo">
-          <label>Lote de rechazo</label>
-          <input type="text" data-lote-rechazo />
-        </div>
-      </div>
-      <div class="zx-fila-acciones" style="margin-top:14px;">
-        <button type="button" class="zx-btn zx-btn-secundario zx-btn-sm" data-cerrar>Cancelar</button>
-        <button type="button" class="zx-btn zx-btn-exito zx-btn-sm" data-confirmar>Generar folio</button>
-      </div>
-    </div>`;
+  fondo.innerHTML = `<div class="zx-modal">${html}</div>`;
   document.body.appendChild(fondo);
-
   function cerrar() {
     fondo.remove();
     document.removeEventListener('keydown', escListener);
@@ -130,33 +94,80 @@ function abrirModalMaterialRecibido(id, folio) {
   fondo.addEventListener('click', (evento) => { if (evento.target === fondo) cerrar(); });
   document.addEventListener('keydown', escListener);
   fondo.querySelectorAll('[data-cerrar]').forEach((btn) => btn.addEventListener('click', cerrar));
+  return { fondo, cerrar };
+}
+
+// Mensaje de error dentro del pop up (el aviso de arriba de la página queda tapado por el pop up).
+function avisoModal(fondo, texto) {
+  let el = fondo.querySelector('[data-aviso]');
+  if (!el) {
+    el = document.createElement('div');
+    el.setAttribute('data-aviso', '');
+    el.className = 'zx-mensaje zx-mensaje-error';
+    fondo.querySelector('.zx-fila-acciones').insertAdjacentElement('beforebegin', el);
+  }
+  el.textContent = texto;
+}
+
+// ---------- Popup "Material recibido": uno o varios lotes (cada uno con su cantidad) antes de generar el folio ----------
+function filaLote(puedeQuitar) {
+  return `
+    <div class="zx-subtabla-fila" data-fila-lote>
+      <input type="text" placeholder="Lote" data-lote />
+      <input type="number" step="any" min="0" placeholder="Cantidad" data-cantidad />
+      ${puedeQuitar ? '<button type="button" class="zx-btn-quitar-fila" data-quitar-lote title="Quitar lote">✕</button>' : '<span></span>'}
+    </div>`;
+}
+
+function abrirModalMaterialRecibido(id, folio) {
+  const { fondo, cerrar } = crearModal('zx-modal-material-fondo', `
+      <div class="zx-modal-cabecera">
+        <h2>Material recibido · ${escaparHtml(folio)}</h2>
+        <button type="button" class="zx-modal-cerrar" data-cerrar>✕</button>
+      </div>
+      <p class="zx-fila-meta" style="margin-top:-4px;">Captura el lote y la cantidad recibidos antes de generar el folio de recolección. Si llegaron varios lotes, agrégalos con el botón.</p>
+      <div class="zx-subtabla" data-lista-lotes>${filaLote(false)}</div>
+      <button type="button" class="zx-btn-agregar-fila" data-agregar-lote>+ Agregar nuevo lote</button>
+      <div class="zx-fila-acciones" style="margin-top:14px;">
+        <button type="button" class="zx-btn zx-btn-secundario zx-btn-sm" data-cerrar>Cancelar</button>
+        <button type="button" class="zx-btn zx-btn-exito zx-btn-sm" data-confirmar>Generar folio</button>
+      </div>`);
+
+  const lista = fondo.querySelector('[data-lista-lotes]');
+  fondo.querySelector('[data-agregar-lote]').addEventListener('click', () => {
+    lista.insertAdjacentHTML('beforeend', filaLote(true));
+    lista.lastElementChild.querySelector('[data-lote]').focus();
+  });
+  lista.addEventListener('click', (evento) => {
+    const quitar = evento.target.closest('[data-quitar-lote]');
+    if (quitar) quitar.closest('[data-fila-lote]').remove();
+  });
 
   fondo.querySelector('[data-confirmar]').addEventListener('click', async () => {
-    const cantidadTexto = fondo.querySelector('[data-cantidad]').value.trim();
-    const loteRechazo = fondo.querySelector('[data-lote-rechazo]').value.trim();
-
-    if (!cantidadTexto) {
-      mostrarMensaje('Captura la cantidad antes de continuar.', false);
-      fondo.querySelector('[data-cantidad]').focus();
-      return;
+    const lotes = [];
+    for (const fila of lista.querySelectorAll('[data-fila-lote]')) {
+      const lote = fila.querySelector('[data-lote]').value.trim();
+      const cantidadTexto = fila.querySelector('[data-cantidad]').value.trim();
+      const cantidad = Number(cantidadTexto);
+      if (!lote) { avisoModal(fondo, 'Captura el nombre de cada lote.'); fila.querySelector('[data-lote]').focus(); return; }
+      if (!cantidadTexto || Number.isNaN(cantidad) || cantidad < 0) {
+        avisoModal(fondo, `Captura una cantidad válida para el lote ${lote}.`);
+        fila.querySelector('[data-cantidad]').focus();
+        return;
+      }
+      lotes.push({ lote, cantidad });
     }
-    const cantidad = Number(cantidadTexto);
-    if (Number.isNaN(cantidad) || cantidad < 0) {
-      mostrarMensaje('La cantidad debe ser un número válido.', false);
-      fondo.querySelector('[data-cantidad]').focus();
-      return;
-    }
-    if (!confirmarAccion(`¿Confirmas que el material de ${folio} ya llegó y quieres generar su folio de recolección?`)) return;
+    const resumen = lotes.map((l) => `${l.lote} (${l.cantidad})`).join(', ');
+    if (!confirmarAccion(`¿Confirmas que el material de ${folio} ya llegó (${resumen}) y quieres generar su folio de recolección?`)) return;
 
     const btnConfirmar = fondo.querySelector('[data-confirmar]');
     btnConfirmar.disabled = true;
     const { data: idFolio, error } = await supabase.rpc('recoleccion_material_recibido', {
       p_queja_id: id,
-      p_cantidad: cantidad,
-      p_lote_rechazo: loteRechazo || null,
+      p_lotes: lotes,
     });
     if (error) {
-      mostrarMensaje('No se pudo generar el folio: ' + error.message, false);
+      avisoModal(fondo, 'No se pudo generar el folio: ' + error.message);
       btnConfirmar.disabled = false;
       return;
     }
@@ -167,11 +178,81 @@ function abrirModalMaterialRecibido(id, folio) {
   });
 }
 
+// ---------- Popup "Folio sin queja": código, lote y cantidad ----------
+function abrirModalSinQueja() {
+  const { fondo, cerrar } = crearModal('zx-modal-sinqueja-fondo', `
+      <div class="zx-modal-cabecera">
+        <h2>Folio sin queja</h2>
+        <button type="button" class="zx-modal-cerrar" data-cerrar>✕</button>
+      </div>
+      <p class="zx-fila-meta" style="margin-top:-4px;">Captura los datos del material que llegó sin queja registrada.</p>
+      <div class="zx-form-grid">
+        <div class="zx-campo">
+          <label>Código <span class="req">*</span></label>
+          <input type="text" data-codigo />
+        </div>
+        <div class="zx-campo">
+          <label>Lote <span class="req">*</span></label>
+          <input type="text" data-lote />
+        </div>
+        <div class="zx-campo">
+          <label>Cantidad <span class="req">*</span></label>
+          <input type="number" step="any" min="0" data-cantidad />
+        </div>
+      </div>
+      <div class="zx-fila-acciones" style="margin-top:14px;">
+        <button type="button" class="zx-btn zx-btn-secundario zx-btn-sm" data-cerrar>Cancelar</button>
+        <button type="button" class="zx-btn zx-btn-exito zx-btn-sm" data-confirmar>Generar folio</button>
+      </div>`);
+
+  fondo.querySelector('[data-codigo]').focus();
+  fondo.querySelector('[data-confirmar]').addEventListener('click', async () => {
+    const codigo = fondo.querySelector('[data-codigo]').value.trim();
+    const lote = fondo.querySelector('[data-lote]').value.trim();
+    const cantidadTexto = fondo.querySelector('[data-cantidad]').value.trim();
+    const cantidad = Number(cantidadTexto);
+    if (!codigo) { avisoModal(fondo, 'Captura el código.'); fondo.querySelector('[data-codigo]').focus(); return; }
+    if (!lote) { avisoModal(fondo, 'Captura el lote.'); fondo.querySelector('[data-lote]').focus(); return; }
+    if (!cantidadTexto || Number.isNaN(cantidad) || cantidad < 0) {
+      avisoModal(fondo, 'Captura una cantidad válida.');
+      fondo.querySelector('[data-cantidad]').focus();
+      return;
+    }
+    if (!confirmarAccion('¿Confirmas generar un folio de recolección sin queja asociada?')) return;
+
+    const btn = fondo.querySelector('[data-confirmar]');
+    btn.disabled = true;
+    const { data: idFolio, error } = await supabase.rpc('recoleccion_sin_queja', {
+      p_codigo: codigo,
+      p_lote: lote,
+      p_cantidad: cantidad,
+    });
+    if (error) {
+      avisoModal(fondo, 'No se pudo generar el folio: ' + error.message);
+      btn.disabled = false;
+      return;
+    }
+    cerrar();
+    const { data: fila } = await supabase.from('recolecciones').select('folio').eq('id', idFolio).single();
+    mostrarMensaje(`Folio generado: ${fila?.folio || idFolio}.`, true);
+    await cargarTodo();
+  });
+}
+
+// Datos del material capturados en CEDIS (código solo en folios sin queja; lotes y cantidad en ambos).
+function detalleMaterial(r) {
+  const partes = [];
+  if (r.codigo) partes.push('Código ' + r.codigo);
+  if (r.lote_rechazo) partes.push('Lote ' + r.lote_rechazo);
+  if (r.cantidad !== null && r.cantidad !== undefined) partes.push('Cantidad ' + r.cantidad);
+  return partes.length ? ' · ' + escaparHtml(partes.join(' · ')) : '';
+}
+
 // ---------- Folios pendientes de enviar ----------
 async function cargarPendientesDeEnvio() {
   const { data, error } = await supabase
     .from('recolecciones')
-    .select('id, folio, generado_en, queja_id, quejas(folio, cliente)')
+    .select('id, folio, generado_en, queja_id, codigo, cantidad, lote_rechazo, quejas(folio, cliente)')
     .is('enviado_en', null)
     .order('generado_en', { ascending: true });
 
@@ -191,7 +272,7 @@ async function cargarPendientesDeEnvio() {
     <div class="zx-fila">
       <div class="zx-fila-info">
         <span class="zx-fila-folio">${escaparHtml(r.folio)}</span>
-        <span class="zx-fila-meta">${r.quejas ? escaparHtml(r.quejas.folio) + ' · ' + escaparHtml(r.quejas.cliente) : 'Sin queja asociada'}</span>
+        <span class="zx-fila-meta">${r.quejas ? escaparHtml(r.quejas.folio) + ' · ' + escaparHtml(r.quejas.cliente) : 'Sin queja asociada'}${detalleMaterial(r)}</span>
       </div>
       <div class="zx-fila-acciones">
         <button class="zx-btn zx-btn-secundario zx-btn-sm" data-id="${r.id}" data-accion="enviar">Enviar a planta</button>

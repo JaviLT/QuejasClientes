@@ -11,7 +11,7 @@
 // alternadas, secciones 1 a 4, fecha de emisión / recibido por / elaboró, y la nota de copia
 // controlada al pie de cada página.
 import { supabase } from './supabase-client.js';
-import { obtenerDatosQueja } from './detalle.js';
+import { obtenerDatosQueja, textoLotes } from './detalle.js';
 import { esImagenAdjunto } from './adjuntos.js';
 
 const URL_JSPDF = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
@@ -222,7 +222,7 @@ export async function exportarDictamenPdf(id) {
     ['CUÁNDO (D2):', /^\d{4}-\d{2}-\d{2}$/.test(q.d2_cuando || '') ? fechaCorta(q.d2_cuando, true) : q.d2_cuando], ['DÓNDE (D2):', q.d2_donde], ['CUÁNTO (D2):', q.d2_cuanto],
     ['FOLIO DE RECOLECCIÓN:', rec?.folio],
     ['CANTIDAD RECOLECTADA:', rec?.cantidad],
-    ['LOTE DE RECHAZO:', rec?.lote_rechazo],
+    ['LOTE DE RECHAZO:', textoLotes(rec)],
     ['REGISTRADA POR:', q.profiles?.nombre_completo],
   ].filter(([, v]) => v !== null && v !== undefined && String(v).trim() !== '');
   const todas = [...filasDatos, ...extras];
@@ -355,6 +355,10 @@ export async function exportarDictamenPdf(id) {
   } else {
     parrafo('(Sin medidas capturadas)', { justificar: false });
   }
+  if (d.comentarios_medidas && d.comentarios_medidas.trim()) {
+    d.comentarios_medidas.split(/\n+/).map((t) => t.trim()).filter(Boolean)
+      .forEach((t, i) => parrafo(i === 0 ? `Comentarios: ${t}` : t, { despues: 8 }));
+  }
 
   // ---------- 4. Conclusión ----------
   titulo('4.  Conclusión:');
@@ -385,4 +389,38 @@ export async function exportarDictamenPdf(id) {
   const nombre = `VEN-F-08_Dictamen_${limpiar(q.folio).replace(/[^A-Za-z0-9_-]/g, '')}.pdf`;
   doc.save(nombre);
   return nombre;
+}
+
+// ---------- Botón "Descargar PDF" compartido (Comercial y Quejas cerradas) ----------
+// Estados en los que todavía NO existe un dictamen registrado. A partir del siguiente estado
+// (o si la queja se rechazó en el dictamen) el botón se habilita.
+const ESTADOS_SIN_DICTAMEN = ['nueva', 'esperando_muestra', 'dictamen_pendiente', 'rechazada_calidad'];
+
+/** HTML del botón "Descargar PDF" de una fila de queja; va deshabilitado mientras no haya dictamen. */
+export function botonDescargarPdf(q) {
+  const habilitado = !ESTADOS_SIN_DICTAMEN.includes(q.estado);
+  const titulo = habilitado
+    ? 'Descarga el dictamen en PDF (formato VEN-F-08)'
+    : (q.estado === 'rechazada_calidad' ? 'Esta queja se rechazó antes del dictamen' : 'Disponible cuando Calidad termine el dictamen');
+  return `<button type="button" class="zx-btn zx-btn-sm" data-accion="exportar_pdf" data-id-pdf="${q.id}" title="${titulo}"${habilitado ? '' : ' disabled'}>Descargar PDF</button>`;
+}
+
+/** Engancha los botones creados con botonDescargarPdf dentro de `contenedor`. */
+export function activarBotonesPdf(contenedor, avisar) {
+  contenedor.querySelectorAll('[data-accion="exportar_pdf"][data-id-pdf]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const textoOriginal = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Generando PDF…';
+      try {
+        const nombre = await exportarDictamenPdf(btn.getAttribute('data-id-pdf'));
+        avisar(`PDF generado: ${nombre}`, true);
+      } catch (e) {
+        avisar('No se pudo generar el PDF: ' + (e?.message || e), false);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = textoOriginal;
+      }
+    });
+  });
 }

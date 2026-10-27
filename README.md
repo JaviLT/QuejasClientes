@@ -19,7 +19,7 @@ assets/css/estilos.css   Estilos compartidos (paleta de marca Zubex)
 assets/js/
   supabase-client.js     Inicializa el cliente de Supabase (URL + publishable key)
   version.js             Número de versión visible de la app (ver "Versión de la app" abajo)
-  auth-guard.js          Exige sesión + rol correcto en cada pantalla, pinta el encabezado (ícono, pestañas/botón de acción, botón de usuario con menú de modo noche y cerrar sesión, y la versión en el pie), y centraliza el doble check (`confirmarAccion`)
+  auth-guard.js          Exige sesión + rol correcto en cada pantalla, pinta el encabezado (ícono, pestañas/botón de acción, interruptor sol/luna de modo noche, nombre de usuario con menú de cerrar sesión, y la versión en el pie), y centraliza el doble check (`confirmarAccion`)
   tiempo.js               Duración fija y legible de cada etapa (minutos/horas/días/semanas/meses/años) — nunca un reloj en vivo, y solo la usa `admin.js`
   detalle.js              Modal compartido "Ver detalles" de una queja (datos + línea de tiempo + dictamen + adjuntos) — la línea de tiempo y otras fechas de proceso solo se muestran completas si quien mira la pantalla es Admin (ver "Tiempos: solo para Admin")
   adjuntos.js             Lógica compartida de adjuntos (límite de 15 MB, íconos por tipo de archivo, subida a Storage + registro en queja_adjuntos) — la usan comercial.js, calidad.js y detalle.js
@@ -91,7 +91,7 @@ Desde el 28 de septiembre de 2026 una queja nueva ya no pasa por el estatus `nue
 
 ## Versión de la app
 
-`assets/js/version.js` exporta `APP_VERSION`, un número de versión visible que se pinta en el pie de página de cada pantalla (incluyendo el login) vía `pintarPie()` en `auth-guard.js`. Sirve para que cualquiera — sobre todo Admin — pueda confirmar de un vistazo que ya tiene la versión más reciente desplegada. **Convención:** cada ronda de cambios que se entregue debe subir este número (minor para pantallas/funciones nuevas o cambiadas, patch para una corrección chica). Actual: `1.3.0`.
+`assets/js/version.js` exporta `APP_VERSION`, un número de versión visible que se pinta en el pie de página de cada pantalla (incluyendo el login) vía `pintarPie()` en `auth-guard.js`. Sirve para que cualquiera — sobre todo Admin — pueda confirmar de un vistazo que ya tiene la versión más reciente desplegada. **Convención:** cada ronda de cambios que se entregue debe subir este número (minor para pantallas/funciones nuevas o cambiadas, patch para una corrección chica). Actual: `1.13.0`.
 
 ## Ícono de la marca
 

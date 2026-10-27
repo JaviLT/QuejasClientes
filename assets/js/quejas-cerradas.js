@@ -7,6 +7,7 @@ import { supabase } from './supabase-client.js';
 import { exigirSesion, pintarEncabezado, escaparHtml, confirmarAccion } from './auth-guard.js';
 import { formatoDuracionFija } from './tiempo.js';
 import { tituloQueja, botonDetalle, establecerRolActual, ESTADOS_TERMINALES } from './detalle.js';
+import { botonDescargarPdf, activarBotonesPdf } from './pdf-dictamen.js';
 
 let esAdmin = false;
 
@@ -64,10 +65,12 @@ async function cargarQuejasCerradas() {
         </div>
         <div class="zx-fila-acciones">
           ${botonDetalle(q.id)}
+          ${botonDescargarPdf(q)}
           <span class="zx-contador">${escaparHtml(q.catalogo_estados?.etiqueta || q.estado)}</span>
         </div>
       </div>
     `).join('');
+    activarBotonesPdf(contenedor, mostrarMensaje);
     return;
   }
 
@@ -83,6 +86,7 @@ async function cargarQuejasCerradas() {
         </div>
         <div class="zx-fila-acciones">
           ${botonDetalle(q.id)}
+          ${botonDescargarPdf(q)}
           <button type="button" class="zx-btn-expandir" data-accion="expandir">Ver tiempos</button>
           <button type="button" class="zx-btn zx-btn-peligro zx-btn-sm" data-accion="eliminar">Eliminar</button>
         </div>
@@ -93,6 +97,7 @@ async function cargarQuejasCerradas() {
     </div>
   `).join('');
 
+  activarBotonesPdf(contenedor, mostrarMensaje);
   contenedor.querySelectorAll('[data-id]').forEach((fila) => {
     const id = fila.getAttribute('data-id');
     const panel = fila.querySelector('[data-panel]');

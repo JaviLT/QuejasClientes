@@ -81,8 +81,8 @@ export const ETIQUETAS_ROL = { comercial: 'Comercial', calidad: 'Calidad', cedis
 /**
  * Pinta el encabezado compartido: a la izquierda el ícono (y el título de la pantalla), en medio
  * las pestañas de admin o el botón de acción propio de la pantalla, y a la derecha un botón con
- * el nombre del usuario y su rol/departamento que, al darle clic, abre un menú con modo noche y
- * cerrar sesión.
+ * un interruptor sol/luna (modo noche) y el nombre del usuario que, al darle clic, abre un menú con
+ * "Cerrar sesión".
  * @param {object} perfil
  * @param {string} tituloPantalla
  * @param {{boton?: {id: string, texto: string, titulo?: string, icono?: string}}} [opciones] -
@@ -96,7 +96,7 @@ export function pintarEncabezado(perfil, tituloPantalla, opciones = {}) {
   const pantallasNav = (perfil.pantallas || []).map(pantallaPorClave).filter(Boolean);
   const navAdmin = `
     <nav class="zx-header-nav">
-      ${pantallasNav.map((p) => `<a class="${p.href === paginaActual ? 'zx-nav-activo' : ''}" href="${p.href}">${p.etiqueta}</a>`).join('')}
+      ${pantallasNav.map((p) => `<a class="${[p.href === paginaActual ? 'zx-nav-activo' : '', p.clave === 'quejas_cerradas' ? 'zx-nav-boton' : ''].filter(Boolean).join(' ')}" href="${p.href}">${p.etiqueta}</a>`).join('')}
     </nav>`;
   const botonAccion = opciones.boton
     ? `<button type="button" id="${opciones.boton.id}" class="zx-btn-header-accion"${opciones.boton.titulo ? ` title="${escaparHtml(opciones.boton.titulo)}"` : ''}>${opciones.boton.icono ? `<span class="zx-btn-header-icono">${escaparHtml(opciones.boton.icono)}</span>` : ''}<span>${escaparHtml(opciones.boton.texto)}</span></button>`
@@ -109,14 +109,20 @@ export function pintarEncabezado(perfil, tituloPantalla, opciones = {}) {
       </div>
       ${navAdmin}
       ${botonAccion}
-      <div class="zx-header-usuario-menu">
-        <button type="button" id="zx-btn-usuario-menu" class="zx-btn-usuario" aria-haspopup="true" aria-expanded="false">
-          <span class="zx-usuario-nombre">${escaparHtml(perfil.nombre_completo)}</span>
-          <span class="zx-usuario-rol">${escaparHtml(perfil.rolNombre || ETIQUETAS_ROL[perfil.rol] || perfil.rol)}</span>
+      <div class="zx-header-derecha">
+        <button type="button" id="zx-btn-tema" class="zx-interruptor-tema" role="switch" aria-checked="false" aria-label="Modo noche" title="Modo noche">
+          <span class="zx-interruptor-icono zx-icono-sol" aria-hidden="true">☀️</span>
+          <span class="zx-interruptor-icono zx-icono-luna" aria-hidden="true">🌙</span>
+          <span class="zx-interruptor-bola" aria-hidden="true"></span>
         </button>
-        <div id="zx-menu-usuario" class="zx-menu-desplegable zx-oculto">
-          <button type="button" id="zx-btn-tema" class="zx-menu-item"></button>
-          <button type="button" id="zx-btn-salir" class="zx-menu-item zx-menu-item-peligro">Cerrar sesión</button>
+        <div class="zx-header-usuario-menu">
+          <button type="button" id="zx-btn-usuario-menu" class="zx-btn-usuario" aria-haspopup="true" aria-expanded="false">
+            <span class="zx-usuario-nombre">${escaparHtml(perfil.nombre_completo)}</span>
+            <span class="zx-usuario-flecha" aria-hidden="true">▾</span>
+          </button>
+          <div id="zx-menu-usuario" class="zx-menu-desplegable zx-oculto">
+            <button type="button" id="zx-btn-salir" class="zx-menu-item zx-menu-item-peligro">Cerrar sesión</button>
+          </div>
         </div>
       </div>
     </div>`;
@@ -178,7 +184,10 @@ function temaActual() {
 }
 
 function pintarIconoTema(boton) {
-  boton.textContent = temaActual() === 'oscuro' ? '☀️ Modo día' : '🌙 Modo noche';
+  const oscuro = temaActual() === 'oscuro';
+  boton.setAttribute('aria-checked', oscuro ? 'true' : 'false');
+  boton.title = oscuro ? 'Cambiar a modo día' : 'Cambiar a modo noche';
+  boton.setAttribute('aria-label', boton.title);
 }
 
 /** Alterna entre modo claro/oscuro y lo guarda para futuras visitas. */
