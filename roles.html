@@ -17,7 +17,7 @@
 
     <div class="zx-tarjeta">
       <h2>Roles <span id="c-roles" class="zx-contador">0</span></h2>
-      <p class="zx-vacio" style="text-align:left;margin-top:0;">Cada rol decide <strong>qué pantallas puede abrir</strong>. Un rol nuevo solo consulta: las acciones que cambian el proceso de una queja (registrar, dictaminar, recibir material, enviar a planta, eliminar…) siguen siendo de Comercial, Calidad, CEDIS y Administrador, y en las pantallas de otro rol se abren en modo solo lectura. Administrador siempre ve todo y no se puede modificar. Los cambios aplican la siguiente vez que la persona abre o recarga una pantalla.</p>
+      <p class="zx-vacio" style="text-align:left;margin-top:0;">Cada rol decide <strong>qué pantallas puede abrir</strong>. Por defecto un rol solo consulta: en las pantallas de otro rol se abre en modo solo lectura. Si marcas <strong>"Puede ejecutar acciones como"</strong> Comercial, Calidad o CEDIS, ese rol además podrá hacer lo mismo que ese rol (registrar, dictaminar, recibir material, enviar a planta…). Eliminar quejas y administrar usuarios o roles son solo de Administrador. Administrador siempre ve todo y no se puede modificar. Los cambios aplican la siguiente vez que la persona abre o recarga una pantalla.</p>
       <div id="lista-roles"></div>
     </div>
 
@@ -31,6 +31,10 @@
         <div class="zx-campo" style="margin-top:12px;">
           <label>Pantallas que puede ver</label>
           <div id="nuevo-rol-pantallas" class="zx-rol-pantallas"></div>
+        </div>
+        <div class="zx-campo" style="margin-top:12px;">
+          <label>Puede ejecutar acciones como</label>
+          <div id="nuevo-rol-actua" class="zx-rol-pantallas"></div>
         </div>
         <button type="submit" id="zx-btn-crear-rol" class="zx-btn zx-btn-primario" style="margin-top:12px;">Crear rol</button>
       </form>

@@ -24,6 +24,21 @@
         <svg width="20" height="20" viewBox="0 0 21 21" aria-hidden="true"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
         Entrar con Microsoft
       </button>
+
+      <div class="zx-login-separador"><span>o</span></div>
+      <button type="button" id="zx-btn-mostrar-local" class="zx-btn zx-btn-detalle" aria-expanded="false" aria-controls="zx-form-login">Entrar con usuario local</button>
+
+      <form id="zx-form-login" class="zx-oculto" autocomplete="off">
+        <div class="zx-campo">
+          <label for="usuario">Usuario</label>
+          <input type="text" id="usuario" name="usuario" autocomplete="off" placeholder="Tu usuario" autocapitalize="characters" required />
+        </div>
+        <div class="zx-campo" style="margin-top:12px;">
+          <label for="contrasena">Contraseña</label>
+          <input type="password" id="contrasena" name="contrasena" autocomplete="current-password" required />
+        </div>
+        <button type="submit" id="zx-btn-entrar" class="zx-btn zx-btn-primario">Entrar</button>
+      </form>
     </div>
   </div>
 

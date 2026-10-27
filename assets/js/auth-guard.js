@@ -9,8 +9,8 @@ import { TODAS_LAS_PANTALLAS, pantallaPorClave, pantallasDePerfil } from './pant
  * @param {string[]|null} rolesPermitidos - ej. ['admin']. null = no se filtra por nombre de rol.
  * @param {string|null} pantalla - clave de pantalla (ver pantallas.js). Si se da, el rol de la
  *   persona debe tener esa pantalla asignada (en la pantalla Roles). Si la pantalla es de las que
- *   tienen un rol "nativo" (comercial/calidad/cedis) y la persona tiene otro rol, la pantalla se
- *   abre en solo lectura (body.zx-solo-lectura: se esconden los botones que cambian el proceso).
+ *   tienen un rol "nativo" (comercial/calidad/cedis) y la persona ni tiene ese rol ni "actúa como" él
+ *   (roles.actua_como, ver pantalla Roles), la pantalla se abre en solo lectura (body.zx-solo-lectura: se esconden los botones que cambian el proceso).
  * @returns {Promise<{session, perfil}|null>} perfil incluye `rolNombre` y `pantallas` (claves).
  */
 export async function exigirSesion(rolesPermitidos = null, pantalla = null) {
@@ -22,7 +22,7 @@ export async function exigirSesion(rolesPermitidos = null, pantalla = null) {
 
   const { data: perfil, error } = await supabase
     .from('profiles')
-    .select('rol, nombre_completo, activo, roles(nombre, pantallas)')
+    .select('rol, nombre_completo, activo, roles(nombre, pantallas, actua_como)')
     .eq('id', session.user.id)
     .single();
 
@@ -39,6 +39,8 @@ export async function exigirSesion(rolesPermitidos = null, pantalla = null) {
 
   perfil.rolNombre = perfil.roles?.nombre || ETIQUETAS_ROL[perfil.rol] || perfil.rol;
   perfil.pantallas = pantallasDePerfil(perfil.rol, perfil.roles?.pantallas);
+  // Roles de los que la persona puede ejecutar acciones: el suyo + los que le dio el admin en Roles ("actúa como").
+  perfil.actuaComo = [perfil.rol, ...(perfil.roles?.actua_como || [])];
 
   if (rolesPermitidos && !rolesPermitidos.includes(perfil.rol)) {
     mostrarBloqueo('Tu cuenta no tiene acceso a esta pantalla.');
@@ -51,7 +53,7 @@ export async function exigirSesion(rolesPermitidos = null, pantalla = null) {
       return null;
     }
     const rolNativo = pantallaPorClave(pantalla)?.rolNativo;
-    if (rolNativo && perfil.rol !== rolNativo) {
+    if (rolNativo && !perfil.actuaComo.includes(rolNativo)) {
       document.body.classList.add('zx-solo-lectura');
     }
   }
@@ -60,11 +62,8 @@ export async function exigirSesion(rolesPermitidos = null, pantalla = null) {
 }
 
 export async function cerrarSesion() {
-  // Las cuentas de prueba (correo interno) regresan a su acceso con contraseña; el resto, al login con Microsoft.
-  const { data: { session } } = await supabase.auth.getSession();
-  const esDePrueba = (session?.user?.email || '').endsWith('@zx-procesos.local');
   await supabase.auth.signOut();
-  location.replace(esDePrueba ? 'login-pruebas.html' : 'login.html');
+  location.replace('login.html');
 }
 
 function mostrarBloqueo(mensaje) {

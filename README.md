@@ -7,7 +7,7 @@ Front real (HTML/CSS/JS estático) conectado a Supabase, para registrar y dar se
 ```
 index.html              Redirige a login.html (se deja por si algo apunta a la raíz del sitio)
 login.html              Login con Microsoft (Entra ID)
-login-pruebas.html      Acceso de pruebas con usuario + contraseña (cuentas compartidas)
+login-pruebas.html      Solo redirige a login.html (el usuario local ahora está en login.html)
 comercial.html           Mis quejas + botón "Nueva queja" (en la barra superior, abre un modal con adjuntos)
 calidad.html             Bandejas de Calidad (esperando muestra, dictamen, revisión…)
 cedis.html               Bandejas de CEDIS (espera de recolección con popup "Material recibido", envío a planta, notas de crédito) + botón "Folio sin queja" (en la barra superior)
@@ -24,7 +24,7 @@ assets/js/
   detalle.js              Modal compartido "Ver detalles" de una queja (datos + línea de tiempo + dictamen + adjuntos) — la línea de tiempo y otras fechas de proceso solo se muestran completas si quien mira la pantalla es Admin (ver "Tiempos: solo para Admin")
   adjuntos.js             Lógica compartida de adjuntos (límite de 15 MB, íconos por tipo de archivo, subida a Storage + registro en queja_adjuntos) — la usan comercial.js, calidad.js y detalle.js
   selector-archivos.js    Widget reutilizable "elegir archivos": botón + lista de chips con ícono y botón de quitar, permite ir agregando archivos en varias selecciones sin perder los anteriores — lo usan comercial.js (Nueva queja) y calidad.js (dictamen)
-  pantallas.js (catálogo de pantallas), tiempos-quejas.js, roles.js, login.js, login-comun.js, login-pruebas.js, comercial.js, calidad.js, cedis.js, admin.js, usuarios.js   Lógica de cada pantalla
+  pantallas.js (catálogo de pantallas), tiempos-quejas.js, roles.js, login.js, login-comun.js, comercial.js, calidad.js, cedis.js, admin.js, usuarios.js   Lógica de cada pantalla
 supabase/migrations/     Esquema completo de la base de datos (SQL)
 supabase/functions/admin-crear-usuario/   Edge Function para crear usuarios (usa la service_role key del lado del servidor)
 ```
