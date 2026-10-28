@@ -6,6 +6,13 @@ export const DESTINOS = { comercial: 'comercial.html', calidad: 'calidad.html', 
 
 const mensaje = document.getElementById('zx-mensaje');
 
+/** El directorio suele traer los nombres en MAYÚSCULAS: se pasan a "Nombre Apellido". */
+function formatearNombre(texto) {
+  const t = String(texto || '').trim().replace(/\s+/g, ' ');
+  if (t && t === t.toUpperCase()) return t.toLowerCase().replace(/(^|\s)(\S)/g, (m, a, b) => a + b.toUpperCase());
+  return t;
+}
+
 export function mostrarError(texto, tipo = 'error') {
   mensaje.textContent = texto;
   mensaje.className = 'zx-mensaje ' + (tipo === 'info' ? 'zx-mensaje-info' : 'zx-mensaje-error');
@@ -39,10 +46,20 @@ export async function redirigirSegunRol() {
     return 'bloqueado';
   }
 
-  // Cuentas nuevas que traían el correo como nombre: si Microsoft ya mandó el nombre real, se guarda.
-  const nombreMicrosoft = session.user.user_metadata?.name || session.user.user_metadata?.full_name;
-  if (nombreMicrosoft && pareceCorreo(perfil.nombre_completo)) {
-    await supabase.from('profiles').update({ nombre_completo: nombreMicrosoft }).eq('id', session.user.id);
+  // Cuentas cuyo nombre guardado es un correo: se completa con el nombre real de Microsoft (tenant) si llega
+  // en la sesión o, si no, se le pregunta a Microsoft con el permiso de la sesión recién abierta.
+  if (pareceCorreo(perfil.nombre_completo)) {
+    let nombreMicrosoft = session.user.user_metadata?.name || session.user.user_metadata?.full_name || '';
+    if (!nombreMicrosoft && session.provider_token) {
+      try {
+        const r = await fetch('https://graph.microsoft.com/oidc/userinfo', { headers: { Authorization: `Bearer ${session.provider_token}` } });
+        if (r.ok) nombreMicrosoft = (await r.json()).name || '';
+      } catch (e) { /* sin red o sin permiso: se queda como está */ }
+    }
+    nombreMicrosoft = formatearNombre(nombreMicrosoft);
+    if (nombreMicrosoft && !pareceCorreo(nombreMicrosoft)) {
+      await supabase.from('profiles').update({ nombre_completo: nombreMicrosoft }).eq('id', session.user.id);
+    }
   }
 
   // Admin → su panel; cualquier otro rol (de siempre o creado por el admin) → la primera de sus pantallas asignadas.
