@@ -10,7 +10,7 @@
 // y el resto (PDF, video, etc.) muestra su ícono — en ambos casos con un botón de descarga
 // individual por archivo (activarAdjuntos).
 import { supabase } from './supabase-client.js';
-import { escaparHtml } from './auth-guard.js';
+import { escaparHtml, nombreVisible } from './auth-guard.js';
 import { formatoTamano, iconoParaArchivo, esImagenAdjunto } from './adjuntos.js';
 
 // Los tiempos (fechas/horas de cada etapa) son información exclusiva de Admin. Cada pantalla
@@ -164,7 +164,7 @@ export function construirContenidoDetalle(datos) {
       ${dato('Factura', q.factura)}
       ${dato('ID\'s', q.ids)}
       ${dato('Prioridad', q.prioridad)}
-      ${dato('Registrada por', q.profiles?.nombre_completo)}
+      ${dato('Registrada por', q.profiles?.nombre_completo ? nombreVisible(q.profiles.nombre_completo) : '')}
       ${dato('Fecha de registro', formatoFecha(q.creada_en))}
     </div>
 

@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <script>(function(){try{if(localStorage.getItem('zx-tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}})();</script>
-<title>Quejas de Clientes — Iniciar sesión</title>
+<title>Quejas de Clientes — Entrando</title>
 <link rel="icon" href="assets/img/logo-zx.png" />
 <link rel="stylesheet" href="assets/css/estilos.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" integrity="sha384-BWcjm9OdFth9TbhCxZPdm+gAOUMAzQy9nmTs12ioXdCcbVnJaPMn+fMUoQCLt60R" crossorigin="anonymous"></script>
@@ -19,26 +19,11 @@
 
       <div id="zx-mensaje" class="zx-mensaje zx-oculto"></div>
 
-      <p class="zx-login-sub">Entra con tu cuenta de Microsoft de Zubex.</p>
-      <button type="button" id="zx-btn-microsoft" class="zx-btn zx-btn-microsoft">
+      <p id="zx-login-estado" class="zx-login-sub">Entrando con tu cuenta de Microsoft…</p>
+      <button type="button" id="zx-btn-microsoft" class="zx-btn zx-btn-microsoft zx-oculto">
         <svg width="20" height="20" viewBox="0 0 21 21" aria-hidden="true"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
-        Entrar con Microsoft
+        <span id="zx-btn-microsoft-texto">Entrar con Microsoft</span>
       </button>
-
-      <div class="zx-login-separador"><span>o</span></div>
-      <button type="button" id="zx-btn-mostrar-local" class="zx-btn zx-btn-detalle" aria-expanded="false" aria-controls="zx-form-login">Entrar con usuario local</button>
-
-      <form id="zx-form-login" class="zx-oculto" autocomplete="off">
-        <div class="zx-campo">
-          <label for="usuario">Usuario</label>
-          <input type="text" id="usuario" name="usuario" autocomplete="off" placeholder="Tu usuario" autocapitalize="characters" required />
-        </div>
-        <div class="zx-campo" style="margin-top:12px;">
-          <label for="contrasena">Contraseña</label>
-          <input type="password" id="contrasena" name="contrasena" autocomplete="current-password" required />
-        </div>
-        <button type="submit" id="zx-btn-entrar" class="zx-btn zx-btn-primario">Entrar</button>
-      </form>
     </div>
   </div>
 

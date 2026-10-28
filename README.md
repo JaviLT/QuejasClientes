@@ -7,7 +7,6 @@ Front real (HTML/CSS/JS estático) conectado a Supabase, para registrar y dar se
 ```
 index.html              Redirige a login.html (se deja por si algo apunta a la raíz del sitio)
 login.html              Login con Microsoft (Entra ID)
-login-pruebas.html      Solo redirige a login.html (el usuario local ahora está en login.html)
 comercial.html           Mis quejas + botón "Nueva queja" (en la barra superior, abre un modal con adjuntos)
 calidad.html             Bandejas de Calidad (esperando muestra, dictamen, revisión…)
 cedis.html               Bandejas de CEDIS (espera de recolección con popup "Material recibido", envío a planta, notas de crédito) + botón "Folio sin queja" (en la barra superior)
@@ -44,13 +43,13 @@ Es un sitio 100% estático: no necesita build ni servidor propio. Se puede publi
 
 ### Usuarios
 
-Este repositorio **no** crea usuarios (a propósito: las contraseñas no deben vivir en control de versiones). Créalos una vez desde el Dashboard de Supabase → Authentication → Users, o con un script separado fuera de este repo, y asígnales su `rol` (`comercial`, `calidad`, `cedis` o `admin`) en la tabla `profiles`. El correo interno de cada cuenta sigue el patrón `<usuario>@zx-procesos.local` (ej. `comercial@zx-procesos.local`), aunque en el login la persona nunca ve ni escribe esa parte.
+Este repositorio **no** crea usuarios. Todas las personas entran con su cuenta de Microsoft de Zubex (Supabase Auth, proveedor `azure`); la primera vez quedan registradas sin rol y un administrador se los asigna en la pantalla Usuarios. Ya no existen cuentas locales con usuario y contraseña.
 
 Hoy existen 4 cuentas compartidas (Comercial/Calidad/CEDIS/Admin); en el futuro se planea pasar a una cuenta por empleado.
 
 ### Login sin formato de correo
 
-Supabase Auth siempre necesita internamente un identificador con forma de correo, pero la persona que inicia sesión solo escribe una palabra (`COMERCIAL`, `CALIDAD`, `CEDIS`, `ADMIN`). `assets/js/login.js` construye el correo interno (`usuario.toLowerCase() + '@zx-procesos.local'`) antes de llamar a `signInWithPassword` — si más adelante se pasa a cuentas por empleado con correos reales, basta con cambiar esa función.
+La pantalla `login.html` no tiene formulario: al abrir la app sin sesión manda directo a Microsoft (`assets/js/login.js`). Cada persona se muestra siempre con su nombre, nunca con su correo.
 
 El archivo con el formulario es `login.html` (antes era `index.html`); el logo y "Quejas de Clientes" van centrados arriba de la tarjeta, sin subtítulo, el campo de usuario tiene `autocomplete="off"` para no ofrecer sugerencias del navegador, y la página usa un layout de columna a pantalla completa para que el pie de página con la versión no genere scroll de más.
 

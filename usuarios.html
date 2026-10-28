@@ -17,41 +17,8 @@
 
     <div class="zx-tarjeta">
       <h2>Usuarios <span id="c-usuarios" class="zx-contador">0</span></h2>
-      <p class="zx-vacio" style="text-align:left;margin-top:0;">Las personas entran con su cuenta de Microsoft (o con usuario local, si tienen una). La primera vez con Microsoft quedan registradas <strong>sin rol</strong> y aparecen aquí como pendientes para que les asignes uno.</p>
+      <p class="zx-vacio" style="text-align:left;margin-top:0;">Las personas entran con su cuenta de Microsoft de Zubex. La primera vez quedan registradas <strong>sin rol</strong> y aparecen aquí como pendientes para que les asignes uno.</p>
       <div id="lista-usuarios"></div>
-    </div>
-
-    <div class="zx-tarjeta">
-      <details class="zx-detalles-prueba">
-      <summary>Crear usuario local (usuario y contraseña)</summary>
-      <form id="zx-form-usuario">
-        <div class="zx-form-grid">
-          <div class="zx-campo">
-            <label for="nuevo-usuario">Usuario <span class="req">*</span></label>
-            <input type="text" id="nuevo-usuario" placeholder="ej. JPEREZ" autocapitalize="characters" required />
-          </div>
-          <div class="zx-campo">
-            <label for="nuevo-nombre">Nombre completo</label>
-            <input type="text" id="nuevo-nombre" placeholder="ej. Juan Pérez" />
-          </div>
-          <div class="zx-campo">
-            <label for="nuevo-rol">Rol <span class="req">*</span></label>
-            <select id="nuevo-rol" required>
-              <option value="comercial">Comercial</option>
-              <option value="calidad">Calidad</option>
-              <option value="cedis">CEDIS</option>
-              <option value="admin">Administrador</option>
-            </select>
-          </div>
-          <div class="zx-campo">
-            <label for="nueva-contrasena">Contraseña <span class="req">*</span></label>
-            <input type="text" id="nueva-contrasena" minlength="8" required />
-          </div>
-        </div>
-        <button type="submit" id="zx-btn-crear-usuario" class="zx-btn zx-btn-primario" style="margin-top:18px;">Crear usuario</button>
-      </form>
-      <p class="zx-vacio" style="text-align:left;">Estas cuentas entran desde la pantalla de inicio con el botón "Entrar con usuario local". No usan Microsoft ni tienen correo.</p>
-      </details>
     </div>
   </main>
 

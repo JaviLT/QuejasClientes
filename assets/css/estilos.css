@@ -452,7 +452,6 @@ html[data-tema="oscuro"] .zx-btn-microsoft:hover:not(:disabled) { background: #3
 .zx-etiqueta-pendiente { background: #fef3c7; color: #92400e; border-radius: 999px; padding: 2px 10px; font-size: 0.78rem; font-weight: 600; }
 html[data-tema="oscuro"] .zx-etiqueta-pendiente { background: #4a3a10; color: #fde68a; }
 .zx-subtitulo-lista { margin: 18px 0 6px; font-size: 0.95rem; color: var(--zx-texto-suave); }
-.zx-detalles-prueba > summary { cursor: pointer; font-weight: 600; margin-bottom: 12px; }
 
 .zx-selector-pantalla { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
 
@@ -713,7 +712,7 @@ html[data-tema="oscuro"] .zx-aviso-lectura { background: #14264d; color: #bfdbfe
 .zx-filtros-tiempos { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
 .zx-filtros-tiempos input, .zx-filtros-tiempos select { width: auto; min-width: 180px; }
 
-/* ---------- Login con usuario local (ronda 12) ---------- */
-.zx-login-separador { display: flex; align-items: center; gap: 10px; margin: 14px 0 8px; color: var(--zx-texto-suave); font-size: 0.8rem; }
-.zx-login-separador::before, .zx-login-separador::after { content: ''; flex: 1; border-top: 1px solid var(--zx-borde); }
 #zx-form-login { margin-top: 14px; }
+
+/* Edición del nombre en Usuarios */
+.zx-input-nombre { min-width: 240px; max-width: 100%; padding: 7px 10px; border: 1px solid var(--zx-borde); border-radius: 8px; font: inherit; background: var(--zx-blanco); color: var(--zx-texto); }

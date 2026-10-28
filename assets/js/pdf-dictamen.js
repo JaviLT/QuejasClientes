@@ -13,6 +13,7 @@
 import { supabase } from './supabase-client.js';
 import { obtenerDatosQueja, textoLotes } from './detalle.js';
 import { esImagenAdjunto } from './adjuntos.js';
+import { pareceCorreo } from './auth-guard.js';
 
 const URL_JSPDF = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
 // Huella (SRI) de esa versión exacta: si alguien alterara el archivo en la red de entrega, el navegador lo rechaza.
@@ -117,7 +118,7 @@ export async function exportarDictamenPdf(id) {
   let elaboro = '';
   if (d.creado_por) {
     const { data: p } = await supabase.from('profiles').select('nombre_completo').eq('id', d.creado_por).maybeSingle();
-    elaboro = p?.nombre_completo || '';
+    elaboro = pareceCorreo(p?.nombre_completo) ? '' : (p?.nombre_completo || '');
   }
 
   // Fotos de evidencia: todas las imágenes adjuntas a la queja.
@@ -223,7 +224,7 @@ export async function exportarDictamenPdf(id) {
     ['FOLIO DE RECOLECCIÓN:', rec?.folio],
     ['CANTIDAD RECOLECTADA:', rec?.cantidad],
     ['LOTE DE RECHAZO:', textoLotes(rec)],
-    ['REGISTRADA POR:', q.profiles?.nombre_completo],
+    ['REGISTRADA POR:', pareceCorreo(q.profiles?.nombre_completo) ? '' : q.profiles?.nombre_completo],
   ].filter(([, v]) => v !== null && v !== undefined && String(v).trim() !== '');
   const todas = [...filasDatos, ...extras];
 

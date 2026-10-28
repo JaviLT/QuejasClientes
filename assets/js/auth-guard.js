@@ -28,7 +28,7 @@ export async function exigirSesion(rolesPermitidos = null, pantalla = null) {
 
   if (error || !perfil || perfil.activo === false) {
     await supabase.auth.signOut();
-    location.replace('login.html');
+    location.replace('login.html?motivo=inactiva');
     return null;
   }
 
@@ -63,7 +63,7 @@ export async function exigirSesion(rolesPermitidos = null, pantalla = null) {
 
 export async function cerrarSesion() {
   await supabase.auth.signOut();
-  location.replace('login.html');
+  location.replace('login.html?salida=1'); // evita que la entrada directa a Microsoft la reabra sola
 }
 
 function mostrarBloqueo(mensaje) {
@@ -117,7 +117,7 @@ export function pintarEncabezado(perfil, tituloPantalla, opciones = {}) {
         </button>
         <div class="zx-header-usuario-menu">
           <button type="button" id="zx-btn-usuario-menu" class="zx-btn-usuario" aria-haspopup="true" aria-expanded="false">
-            <span class="zx-usuario-nombre">${escaparHtml(perfil.nombre_completo)}</span>
+            <span class="zx-usuario-nombre">${escaparHtml(nombreVisible(perfil.nombre_completo))}</span>
             <span class="zx-usuario-flecha" aria-hidden="true">▾</span>
           </button>
           <div id="zx-menu-usuario" class="zx-menu-desplegable zx-oculto">
@@ -199,6 +199,17 @@ export function alternarTema() {
     document.documentElement.removeAttribute('data-tema');
   }
   try { localStorage.setItem(CLAVE_TEMA, nuevo); } catch (e) { /* almacenamiento no disponible */ }
+}
+
+/** ¿El texto parece un correo? (algunas cuentas nuevas traían el correo como nombre). */
+export function pareceCorreo(texto) {
+  return /^\S+@\S+\.\S+$/.test(String(texto || '').trim());
+}
+
+/** Nombre para mostrar en pantallas y documentos: el nombre de la persona; nunca su correo. */
+export function nombreVisible(nombre) {
+  const t = String(nombre ?? '').trim();
+  return t && !pareceCorreo(t) ? t : 'Sin nombre registrado';
 }
 
 export function escaparHtml(texto) {

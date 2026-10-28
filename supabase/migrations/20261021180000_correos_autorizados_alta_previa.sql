@@ -47,4 +47,4 @@ begin
   return new;
 end;
 $function$;
--- Datos cargados el 21 de octubre de 2026: auxcedis@zubex.com.mx (cedis), a.patino@zubex.com.mx (comercial), a.valadez@zubex.com.mx (calidad).
+-- Datos cargados el 21 de octubre de 2026: tres personas pre-registradas (una por rol: cedis, comercial y calidad), sus correos están en la tabla correos_autorizados.
